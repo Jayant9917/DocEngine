@@ -21,7 +21,7 @@ The HTTP API accepts requests quickly and sends report work to RabbitMQ. The cur
 
 ## Quick start
 
-For detailed prerequisites, setup, commands, and troubleshooting, follow [SETUP.md](SETUP.md). In brief:
+For detailed setup and testing instructions, see [RUNNING-AND-TESTING.md](docs/RUNNING-AND-TESTING.md).
 
 1. Install Docker Desktop with Compose, Java 21, Maven 3.9+, and Node.js/npm.
 2. Copy `.env.example` to `.env` and adjust local-only credentials if desired.
@@ -59,31 +59,6 @@ For detailed prerequisites, setup, commands, and troubleshooting, follow [SETUP.
 
 Container-to-container traffic uses Compose service names and internal ports (for example, `postgres:5432` and `docengine-api:8080`). The host ports above are for tools running on your computer.
 
-## Verify the backend
-
-```powershell
-docker compose --env-file .env -f docs/docker-compose.mvp.yml ps
-curl.exe http://127.0.0.1:8081/actuator/health
-```
-
-The health response should report `{"status":"UP"}`. Then use the frontend or follow the [end-to-end setup walkthrough](SETUP.md#try-the-complete-report-flow).
-
-## Build and tests
-
-Run the Java reactor tests from the repository root:
-
-```powershell
-mvn test
-```
-
-Some integration tests require the local PostgreSQL container and the connection settings documented in `SETUP.md`. Build the frontend with:
-
-```powershell
-cd frontend
-npm run build
-npm run lint
-```
-
 ## Optional load testing
 
 The k6 script creates real CSV uploads and report-job submissions. It can consume significant CPU, memory, database connections, and object storage, so start with a conservative VU count. Read [tests/load/README.md](tests/load/README.md) before running it.
@@ -116,7 +91,5 @@ dummy data/           Sample CSV datasets for manual testing
 - [Scaling and optimization notes](tests/Project%20monitioring/SCALING-500-1000-USERS.md)
 - [Grafana dashboard reading guide](tests/Project%20monitioring/GRAFANA-DASHBOARD-READING-GUIDE.md)
 - [Grafana metrics reference](tests/Project%20monitioring/GRAFANA-METRICS-GUIDE.md)
-
-## Security note
-
-Do not commit `.env`, production secrets, real tenant API keys, or customer data. Rotate the example credentials and replace the demo tenant/API key before deploying this stack to a shared or public environment.
+- [MIT License](LICENSE)
+- [Code of Conduct](CODE_OF_CONDUCT.md)

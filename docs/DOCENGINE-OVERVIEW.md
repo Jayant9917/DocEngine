@@ -296,6 +296,8 @@ The optional k6 flow test creates real uploads and report jobs to study throughp
 - [Scaling and optimization notes](../tests/Project%20monitioring/SCALING-500-1000-USERS.md)
 - [Grafana dashboard reading guide](../tests/Project%20monitioring/GRAFANA-DASHBOARD-READING-GUIDE.md)
 - [Grafana metrics reference](../tests/Project%20monitioring/GRAFANA-METRICS-GUIDE.md)
+- [MIT License](../LICENSE)
+- [Code of Conduct](../CODE_OF_CONDUCT.md)
 
 ## Current demonstration flow
 
