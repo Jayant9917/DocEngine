@@ -32,8 +32,13 @@ docengine:
   worker:
     lease-seconds: ${DOCENGINE_WORKER_LEASE_SECONDS:300}
   storage:
+    provider: ${DOCENGINE_STORAGE_PROVIDER:minio}
     endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
     access-key: ${MINIO_ACCESS_KEY:docengine}
     secret-key: ${MINIO_SECRET_KEY:docengine-local-password}
-    input-bucket: ${MINIO_INPUT_BUCKET:docengine-inputs}
-    result-bucket: ${MINIO_RESULT_BUCKET:docengine-results}
+    input-bucket: ${DOCENGINE_STORAGE_INPUT_BUCKET:${MINIO_INPUT_BUCKET:docengine-inputs}}
+    result-bucket: ${DOCENGINE_STORAGE_RESULT_BUCKET:${MINIO_RESULT_BUCKET:docengine-results}}
+    s3:
+      region: ${DOCENGINE_STORAGE_S3_REGION:ap-south-1}
+      input-prefix: ${DOCENGINE_STORAGE_S3_INPUT_PREFIX:inputs}
+      output-prefix: ${DOCENGINE_STORAGE_S3_OUTPUT_PREFIX:outputs}

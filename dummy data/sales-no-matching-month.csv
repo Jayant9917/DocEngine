@@ -1,0 +1,5 @@
+orderId,customer,amount,date
+ORD-NOM-0001,Northwind Market,120.00,2026-01-04
+ORD-NOM-0002,Bluebird Cafe,85.50,2026-01-12
+ORD-NOM-0003,Maple Hardware,240.75,2026-01-27
+ORD-NOM-0004,Harbor Books,19.99,2026-01-31

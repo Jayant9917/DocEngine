@@ -4,8 +4,11 @@ import io.minio.MinioClient;
 import io.minio.BucketExistsArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.PutObjectArgs;
+import io.minio.GetObjectArgs;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.http.Method;
+import com.docengine.storage.ObjectStorage;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import okhttp3.OkHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +20,7 @@ import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 
 @Service
+@ConditionalOnProperty(prefix = "docengine.storage", name = "provider", havingValue = "minio", matchIfMissing = true)
 public class MinioObjectStorage implements ObjectStorage {
     private static final Logger log = LoggerFactory.getLogger(MinioObjectStorage.class);
     private final MinioClient client;
@@ -72,8 +76,19 @@ public class MinioObjectStorage implements ObjectStorage {
     }
 
     @Override
-    public String store(String bucket, String objectName, InputStream input,
-                        long size, String contentType) {
+    public String storeInput(String bucket, String objectName, InputStream input,
+                             long size, String contentType) {
+        return put(bucket, objectName, input, size, contentType);
+    }
+
+    @Override
+    public String storeResult(String bucket, String objectName, InputStream input,
+                              long size, String contentType) {
+        return put(bucket, objectName, input, size, contentType);
+    }
+
+    private String put(String bucket, String objectName, InputStream input,
+                       long size, String contentType) {
         try {
             log.info("Uploading {} to MinIO bucket {}", objectName, bucket);
             client.putObject(PutObjectArgs.builder()
@@ -89,6 +104,16 @@ public class MinioObjectStorage implements ObjectStorage {
         }
     }
 
+    @Override
+    public InputStream downloadInput(String bucket, String objectName) {
+        try {
+            return client.getObject(GetObjectArgs.builder().bucket(bucket).object(objectName).build());
+        } catch (Exception exception) {
+            throw new IllegalStateException("Could not download input object from MinIO", exception);
+        }
+    }
+
+    @Override
     public String presignedGetUrl(String bucket, String objectName, int expirySeconds) {
         try {
             return presignClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()

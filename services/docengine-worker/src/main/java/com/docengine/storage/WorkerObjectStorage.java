@@ -5,13 +5,15 @@ import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import okhttp3.OkHttpClient;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 
 @Service
-public class WorkerObjectStorage {
+@ConditionalOnProperty(prefix = "docengine.storage", name = "provider", havingValue = "minio", matchIfMissing = true)
+public class WorkerObjectStorage implements ObjectStorage {
     private final MinioClient client;
 
     public WorkerObjectStorage(
@@ -42,8 +44,25 @@ public class WorkerObjectStorage {
         }
     }
 
-    public String upload(String bucket, String objectName, InputStream input,
-                         long size, String contentType) {
+    @Override
+    public InputStream downloadInput(String bucket, String objectName) {
+        return download(bucket, objectName);
+    }
+
+    @Override
+    public String storeInput(String bucket, String objectName, InputStream input,
+                             long size, String contentType) {
+        return put(bucket, objectName, input, size, contentType);
+    }
+
+    @Override
+    public String storeResult(String bucket, String objectName, InputStream input,
+                              long size, String contentType) {
+        return put(bucket, objectName, input, size, contentType);
+    }
+
+    private String put(String bucket, String objectName, InputStream input,
+                       long size, String contentType) {
         try {
             client.putObject(PutObjectArgs.builder()
                     .bucket(bucket)
@@ -55,5 +74,10 @@ public class WorkerObjectStorage {
         } catch (Exception exception) {
             throw new IllegalStateException("Could not upload result object", exception);
         }
+    }
+
+    @Override
+    public String presignedGetUrl(String bucket, String objectName, int expirySeconds) {
+        throw new UnsupportedOperationException("The worker does not create download URLs");
     }
 }

@@ -1,6 +1,6 @@
 package com.docengine.processor;
 
-import com.docengine.storage.WorkerObjectStorage;
+import com.docengine.storage.ObjectStorage;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.junit.jupiter.api.Test;
@@ -22,15 +22,15 @@ class MonthlyReportProcessorTest {
 
     @Test
     void generatesCsvAndReadablePdfWithTheSameMonthlyRows() throws Exception {
-        WorkerObjectStorage storage = mock(WorkerObjectStorage.class);
+        ObjectStorage storage = mock(ObjectStorage.class);
         String csv = "orderId,customer,amount,date\n"
                 + "ORD-1001,Acme Co,1250.00,2026-09-01\n"
                 + "ORD-1002,Beta Ltd,749.50,2026-09-02\n"
                 + "ORD-2000,Other Co,10.00,2026-08-01\n";
         Map<String, byte[]> uploads = new HashMap<>();
-        when(storage.download("inputs", "tenant/input.csv"))
+        when(storage.downloadInput("inputs", "tenant/input.csv"))
                 .thenReturn(new ByteArrayInputStream(csv.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
-        when(storage.upload(eq("results"), any(String.class), any(), anyLong(), any(String.class)))
+        when(storage.storeResult(eq("results"), any(String.class), any(), anyLong(), any(String.class)))
                 .thenAnswer(invocation -> {
                     String objectName = invocation.getArgument(1);
                     try (var input = (java.io.InputStream) invocation.getArgument(2)) {

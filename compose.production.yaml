@@ -1,0 +1,78 @@
+# EC2 production topology. PostgreSQL is external (Supabase) and file storage is AWS S3.
+# No AWS access keys are passed to the containers; the SDK uses the EC2 instance role.
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?Set a production RabbitMQ username}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:?Set a strong production RabbitMQ password}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    # Intentionally no published ports: API/worker use the private Compose network.
+
+  docengine-api:
+    build:
+      context: .
+      dockerfile: services/docengine-api/Dockerfile
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 30s
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:?Set the Supabase PostgreSQL JDBC URL with sslmode=require}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:?Set the Supabase database username}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:?Set the Supabase database password}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:?Set a production RabbitMQ username}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASS:?Set a strong production RabbitMQ password}
+      SPRING_FLYWAY_LOCATIONS: filesystem:/app/database/migrations
+      DOCENGINE_STORAGE_PROVIDER: s3
+      DOCENGINE_STORAGE_INPUT_BUCKET: ${DOCENGINE_S3_BUCKET:?Set the existing private S3 bucket name}
+      DOCENGINE_STORAGE_RESULT_BUCKET: ${DOCENGINE_S3_BUCKET:?Set the existing private S3 bucket name}
+      DOCENGINE_STORAGE_S3_REGION: ${DOCENGINE_S3_REGION:-ap-south-1}
+      DOCENGINE_STORAGE_S3_INPUT_PREFIX: ${DOCENGINE_S3_INPUT_PREFIX:-inputs}
+      DOCENGINE_STORAGE_S3_OUTPUT_PREFIX: ${DOCENGINE_S3_OUTPUT_PREFIX:-outputs}
+    ports:
+      # Temporary private-to-instance access for SSH-tunneled health checks.
+      # Do not open this port in the EC2 security group. NGINX/TLS will be added later.
+      - "127.0.0.1:${API_HOST_PORT:-8081}:8080"
+
+  docengine-worker:
+    build:
+      context: .
+      dockerfile: services/docengine-worker/Dockerfile
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 30s
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:?Set the Supabase PostgreSQL JDBC URL with sslmode=require}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:?Set the Supabase database username}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:?Set the Supabase database password}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:?Set a production RabbitMQ username}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASS:?Set a strong production RabbitMQ password}
+      DOCENGINE_STORAGE_PROVIDER: s3
+      DOCENGINE_STORAGE_INPUT_BUCKET: ${DOCENGINE_S3_BUCKET:?Set the existing private S3 bucket name}
+      DOCENGINE_STORAGE_RESULT_BUCKET: ${DOCENGINE_S3_BUCKET:?Set the existing private S3 bucket name}
+      DOCENGINE_STORAGE_S3_REGION: ${DOCENGINE_S3_REGION:-ap-south-1}
+      DOCENGINE_STORAGE_S3_INPUT_PREFIX: ${DOCENGINE_S3_INPUT_PREFIX:-inputs}
+      DOCENGINE_STORAGE_S3_OUTPUT_PREFIX: ${DOCENGINE_S3_OUTPUT_PREFIX:-outputs}
+    # No public worker/Actuator port. Monitoring can join the Compose network later.
+
+volumes:
+  rabbitmq_data:

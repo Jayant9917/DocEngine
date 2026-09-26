@@ -58,7 +58,7 @@ public class UploadController {
             Timer.Sample uploadSample = Timer.start();
             String reference;
             try {
-                reference = storage.store(inputBucket, objectName, file.getInputStream(),
+                reference = storage.storeInput(inputBucket, objectName, file.getInputStream(),
                         file.getSize(), file.getContentType() == null ? "text/csv" : file.getContentType());
             } finally {
                 uploadSample.stop(uploadTimer);

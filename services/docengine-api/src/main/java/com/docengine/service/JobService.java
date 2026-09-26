@@ -9,7 +9,7 @@ import com.docengine.enums.JobStatus;
 import com.docengine.messaging.JobMessage;
 import com.docengine.repository.IdempotencyKeyRepository;
 import com.docengine.repository.JobRepository;
-import com.docengine.storage.MinioObjectStorage;
+import com.docengine.storage.ObjectStorage;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -32,14 +32,14 @@ public class JobService {
     private final IdempotencyKeyRepository idempotencyKeyRepository;
     private final RabbitTemplate rabbitTemplate;
     private final ObjectMapper objectMapper;
-    private final MinioObjectStorage objectStorage;
+    private final ObjectStorage objectStorage;
     private final int resultUrlExpirySeconds;
     private final Counter jobSubmissionSuccessCounter;
     private final Counter jobSubmissionFailureCounter;
 
     public JobService(JobRepository jobRepository, IdempotencyKeyRepository idempotencyKeyRepository,
                       RabbitTemplate rabbitTemplate, ObjectMapper objectMapper,
-                      MinioObjectStorage objectStorage,
+                      ObjectStorage objectStorage,
                       MeterRegistry meterRegistry,
                       @org.springframework.beans.factory.annotation.Value("${docengine.storage.result-url-expiry-seconds:900}")
                       int resultUrlExpirySeconds) {

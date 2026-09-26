@@ -4,6 +4,7 @@
 # Local environment and secrets
 .env
 !.env.example
+/deploy/ec2/.env.production
 
 # IDE files
 .idea/

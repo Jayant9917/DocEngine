@@ -1,6 +1,6 @@
 package com.docengine.processor;
 
-import com.docengine.storage.WorkerObjectStorage;
+import com.docengine.storage.ObjectStorage;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -21,12 +21,12 @@ import java.util.List;
 
 @Service
 public class MonthlyReportProcessor {
-    private final WorkerObjectStorage storage;
+    private final ObjectStorage storage;
     private final String inputBucket;
     private final String resultBucket;
 
     public MonthlyReportProcessor(
-            WorkerObjectStorage storage,
+            ObjectStorage storage,
             @Value("${docengine.storage.input-bucket}") String inputBucket,
             @Value("${docengine.storage.result-bucket}") String resultBucket) {
         this.storage = storage;
@@ -39,7 +39,7 @@ public class MonthlyReportProcessor {
         String resultPrefix = "tenants/" + tenantId + "/jobs/" + jobId + "/results/";
         String resultObject = resultPrefix + "monthly-report.csv";
         String pdfObject = resultPrefix + "monthly-report.pdf";
-        try (var input = storage.download(inputBucket, inputObject);
+        try (var input = storage.downloadInput(inputBucket, inputObject);
              var reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
              var output = new ByteArrayOutputStream();
              var writer = new PrintWriter(output, true, StandardCharsets.UTF_8)) {
@@ -58,10 +58,10 @@ public class MonthlyReportProcessor {
             }
             writer.flush();
             byte[] result = output.toByteArray();
-            storage.upload(resultBucket, resultObject,
+            storage.storeResult(resultBucket, resultObject,
                     new ByteArrayInputStream(result), result.length, "text/csv");
             byte[] pdf = createPdf(month, rows);
-            return storage.upload(resultBucket, pdfObject,
+            return storage.storeResult(resultBucket, pdfObject,
                     new ByteArrayInputStream(pdf), pdf.length, "application/pdf");
         } catch (Exception exception) {
             throw new IllegalStateException("Could not generate monthly report", exception);

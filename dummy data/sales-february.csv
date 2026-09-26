@@ -1,0 +1,11 @@
+orderId,customer,amount,date
+ORD-FEB-0001,Northwind Market,245.90,2026-02-01
+ORD-FEB-0002,Bluebird Cafe,38.50,2026-02-03
+ORD-FEB-0003,Maple Hardware,712.00,2026-02-05
+ORD-FEB-0004,Northwind Market,129.99,2026-02-08
+ORD-FEB-0005,Harbor Books,64.25,2026-02-11
+ORD-FEB-0006,Bluebird Cafe,52.75,2026-02-14
+ORD-FEB-0007,Maple Hardware,318.40,2026-02-18
+ORD-FEB-0008,Harbor Books,91.10,2026-02-21
+ORD-FEB-0009,Northwind Market,184.65,2026-02-25
+ORD-FEB-0010,Bluebird Cafe,43.20,2026-02-28
