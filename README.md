@@ -16,7 +16,7 @@ Browser → React frontend → Spring API → PostgreSQL
 Prometheus ← scrapes API and Worker       Grafana → Prometheus
 ```
 
-See the [interactive architecture diagram](DOCENGINE-ARCHITECTURE.html) and its [editable architecture source](DOCENGINE-ARCHITECTURE.architecture.json).
+![DocEngine architecture](Project%20monitioring/docengine-architecture%20.png)
 
 ## Main features
 
