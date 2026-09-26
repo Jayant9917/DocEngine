@@ -1,11 +1,16 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { BrowserRouter, Link, Route, Routes } from 'react-router-dom'
 import Home from './pages/Home'
 import './pages/UploadPage.css'
+import './pages/UploadMonochrome.css'
+
+const Dither = lazy(() => import('./components/Dither'))
 
 const API_BASE_URL = 'http://127.0.0.1:8081'
 const STATUS_STEPS = ['Uploaded', 'Queued', 'Processing', 'Completed', 'Download']
+const ditherWaveColor = [0.58, 0.58, 0.58]
+const ditherBackgroundColor = [0.012, 0.012, 0.012]
 
 function getCurrentStep(upload, job) {
   if (!job) return upload ? 0 : -1
@@ -128,8 +133,11 @@ function UploadPage() {
 
   return (
     <main className="upload-page">
-      <div className="upload-orb upload-orb-violet" aria-hidden="true" />
-      <div className="upload-orb upload-orb-cyan" aria-hidden="true" />
+      <div className="upload-atmosphere" aria-hidden="true">
+        <Suspense fallback={null}>
+          <Dither waveColor={ditherWaveColor} backgroundColor={ditherBackgroundColor} colorNum={2} pixelSize={3} waveSpeed={0.025} />
+        </Suspense>
+      </div>
       <div className="upload-shell">
         <header className="upload-header">
           <Link to="/" className="upload-back"><span aria-hidden="true">←</span> DocEngine home</Link>

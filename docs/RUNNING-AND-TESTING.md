@@ -12,8 +12,12 @@ From the repository root:
 
 ```powershell
 Copy-Item .env.example .env
-docker compose --env-file .env -f docs/docker-compose.mvp.yml up -d --build
+docker compose up -d --build
 ```
+
+On the first startup, the API automatically creates the `docengine-inputs` and
+`docengine-results` MinIO buckets. Later startups safely reuse the existing
+buckets.
 
 Start the frontend in another terminal:
 
@@ -28,7 +32,7 @@ Open `http://localhost:5173`.
 ## Check the backend
 
 ```powershell
-docker compose --env-file .env -f docs/docker-compose.mvp.yml ps
+docker compose ps
 curl.exe http://127.0.0.1:8081/actuator/health
 ```
 

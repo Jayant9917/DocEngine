@@ -1,6 +1,8 @@
 package com.docengine.storage;
 
 import io.minio.MinioClient;
+import io.minio.BucketExistsArgs;
+import io.minio.MakeBucketArgs;
 import io.minio.PutObjectArgs;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.http.Method;
@@ -9,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import jakarta.annotation.PostConstruct;
 
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
@@ -18,12 +21,18 @@ public class MinioObjectStorage implements ObjectStorage {
     private static final Logger log = LoggerFactory.getLogger(MinioObjectStorage.class);
     private final MinioClient client;
     private final MinioClient presignClient;
+    private final String inputBucket;
+    private final String resultBucket;
 
     public MinioObjectStorage(
             @Value("${docengine.storage.endpoint}") String endpoint,
             @Value("${docengine.storage.public-endpoint:${docengine.storage.endpoint}}") String publicEndpoint,
             @Value("${docengine.storage.access-key}") String accessKey,
-            @Value("${docengine.storage.secret-key}") String secretKey) {
+            @Value("${docengine.storage.secret-key}") String secretKey,
+            @Value("${docengine.storage.input-bucket}") String inputBucket,
+            @Value("${docengine.storage.result-bucket}") String resultBucket) {
+        this.inputBucket = inputBucket;
+        this.resultBucket = resultBucket;
         OkHttpClient httpClient = new OkHttpClient.Builder()
                 .connectTimeout(5, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
@@ -41,6 +50,25 @@ public class MinioObjectStorage implements ObjectStorage {
                 .region("us-east-1")
                 .httpClient(httpClient)
                 .build();
+    }
+
+    @PostConstruct
+    void ensureBuckets() {
+        ensureBucket(inputBucket);
+        ensureBucket(resultBucket);
+    }
+
+    private void ensureBucket(String bucket) {
+        try {
+            if (!client.bucketExists(BucketExistsArgs.builder().bucket(bucket).build())) {
+                client.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
+                log.info("Created MinIO bucket {}", bucket);
+            } else {
+                log.info("MinIO bucket {} already exists", bucket);
+            }
+        } catch (Exception exception) {
+            throw new IllegalStateException("Could not initialize MinIO bucket " + bucket, exception);
+        }
     }
 
     @Override

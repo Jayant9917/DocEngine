@@ -28,7 +28,7 @@ For detailed setup and testing instructions, see [RUNNING-AND-TESTING.md](docs/R
 3. From the repository root, start the application stack:
 
    ```powershell
-   docker compose --env-file .env -f docs/docker-compose.mvp.yml up -d --build
+   docker compose up -d --build
    ```
 
 4. Start the frontend in a separate terminal:

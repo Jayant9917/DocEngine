@@ -1,0 +1,87 @@
+.upload-page {
+  --up-bg: #050505;
+  --up-panel: rgb(12 12 12 / 94%);
+  --up-border: rgb(255 255 255 / 16%);
+  --up-violet: #b69cff;
+  --up-violet-bright: #c4b2ff;
+  --up-cyan: #78dce8;
+  --up-muted: #aaa;
+  background: #050505;
+}
+
+.upload-atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  opacity: 0.12;
+  pointer-events: none;
+  mask-image: linear-gradient(to bottom, #000 0%, #000 45%, transparent 100%);
+}
+
+.upload-shell { position: relative; z-index: 1; }
+.upload-orb { display: none; }
+.upload-page { color: #f5f5f5; }
+.upload-back,
+.upload-back span,
+.upload-eyebrow,
+.upload-brand-mark,
+.upload-step-index,
+.upload-file-icon,
+.upload-browse,
+.upload-tip > span,
+.upload-tip code { color: #e5e5e5; }
+.upload-eyebrow > span:not(.upload-brand-mark) { color: #888; }
+.upload-back:hover { color: #fff; }
+.upload-header h1 span { color: #fff; }
+.upload-intro,
+.report-description,
+.upload-tip p { color: #aaa; }
+.upload-card,
+.report-card { border-color: #ffffff25; background: rgb(9 9 9 / 94%); box-shadow: 0 24px 80px #0008, inset 0 1px #ffffff08; }
+.upload-card-heading h2,
+.job-status-heading h2,
+.upload-label { color: #eee; }
+.upload-secure,
+.report-format { color: #ccc; }
+.upload-secure > span { background: #ddd; box-shadow: 0 0 8px #ffffff66; }
+.report-format { border-color: #ffffff30; }
+.upload-input { border-color: #ffffff30; color: #fff; background: #080808; }
+.upload-input:focus { border-color: #eee; box-shadow: 0 0 0 3px #ffffff18; }
+.upload-field-hint,
+.upload-drop-copy small,
+.upload-details dt,
+.job-id-line { color: #999; }
+.upload-dropzone { border-color: #ffffff55; background: #ffffff08; }
+.upload-dropzone:hover,
+.upload-dropzone.is-dragging { border-color: #fff; background: #ffffff12; }
+.upload-dropzone.has-file { border-color: #ffffff80; background: #ffffff0c; }
+.upload-file-icon { border-color: #ffffff35; background: #ffffff0d; }
+.has-file .upload-file-icon { border-color: #ffffff45; color: #fff; background: #ffffff12; }
+.upload-drop-copy strong { color: #f0f0f0; }
+.upload-browse { border-color: #ffffff35; }
+.upload-primary-button { border-color: #b69cff; color: #fff; background: #7045ce; box-shadow: 0 8px 24px #7045ce30; }
+.upload-primary-button:hover:not(:disabled) { filter: brightness(1.12); }
+.upload-primary-button > span:last-child { color: #222; }
+.upload-error { border-color: #ffffff35; color: #eee; background: #ffffff0c; }
+.upload-success { border-color: #ffffff30; background: #ffffff08; }
+.upload-check { color: #050505; background: #eee; }
+.upload-success-title strong,
+.upload-success-title small,
+.upload-details dd { color: #ddd; }
+.status-badge-completed,
+.status-badge-failed,
+.job-status-badge { border-color: #ffffff40; color: #eee; background: #ffffff0b; }
+.status-passed,
+.status-current,
+.status-failed { border-color: #b69cff; color: #090610; background: #b69cff; animation: none; }
+.status-label-passed,
+.status-label-current,
+.status-label-failed { color: #eee; }
+.status-line-passed { background: #ddd; }
+.report-download { border-color: #ffffff45; color: #f3f3f3; background: #ffffff0b; }
+.report-download:hover { border-color: #fff; background: #ffffff16; }
+.upload-tip { border-color: #ffffff20; background: #ffffff06; }
+.upload-tip strong { color: #eee; }
+.upload-footer { color: #999; }
+.upload-footer span { color: #eee; }

@@ -1,0 +1,2 @@
+include:
+  - path: docs/docker-compose.mvp.yml

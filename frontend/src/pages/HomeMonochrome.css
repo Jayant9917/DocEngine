@@ -1,0 +1,111 @@
+.home-page {
+  --ink: #f5f5f5;
+  --muted: #a3a3a3;
+  --line: #292929;
+  --cyan: #78dce8;
+  --violet: #a78bfa;
+  background: #050505;
+  color: var(--ink);
+}
+
+.home-atmosphere {
+  position: absolute;
+  inset: 0 0 auto;
+  height: min(54rem, 100vh);
+  z-index: 0;
+  background: #050505;
+  opacity: 0.16;
+  mask-image: linear-gradient(to bottom, #000 0%, #000 64%, transparent 100%);
+}
+
+.home-page > .home-nav {
+  position: sticky;
+  z-index: 10;
+}
+
+.home-page > main,
+.home-page > .home-footer {
+  position: relative;
+  z-index: 1;
+}
+
+.aurora,
+.star-field { display: none; }
+.home-nav { border-color: #ffffff12; background: #050505e8; }
+.home-logo { color: #f4f4f4; }
+.logo-orb { background: #f5f5f5; box-shadow: 0 0 12px #ffffff80; }
+.home-nav-links > a:not(.nav-launch) { color: #a3a3a3; }
+.home-nav-links > a:not(.nav-launch):hover { color: #fff; }
+.nav-launch { border-color: #ffffff35; color: #f5f5f5; background: #ffffff0b; }
+.nav-launch span { color: #fff; }
+.eyebrow,
+.section-kicker { color: #c8b8ff; }
+.eyebrow { border-color: #a78bfa45; background: #0b0b0bee; }
+.eyebrow-dot { background: var(--violet); box-shadow: 0 0 9px #a78bfa9c; }
+.home-hero h1 span { color: var(--violet); background: linear-gradient(100deg, #b69cff, #75dce8); background-clip: text; -webkit-text-fill-color: transparent; }
+.hero-copy { color: #b3b3b3; }
+.button-primary { border-color: #b69cff; color: #fff; background: #7045ce; box-shadow: 0 6px 24px #7045ce35; }
+.button-primary:hover { background: #8058dc; }
+.button-secondary { color: #e5e5e5; border-color: #ffffff32; background: #080808ad; }
+.button-secondary:hover { border-color: #a78bfa88; background: #15131a; }
+.journey-card,
+.architecture-card { border-color: #ffffff20; background: #08080bf5; box-shadow: 0 22px 75px #000b; }
+.journey-heading,
+.demo-caption,
+.journey-status { color: #a3a3a3; }
+.journey-node { border-color: #515151; color: #aaa; background: #111; }
+.journey-node.is-done { border-color: #69d5ba; color: #041b15; background: #69d5ba; }
+.journey-node.is-active { border-color: var(--violet); color: #090610; background: #b69cff; box-shadow: 0 0 0 4px #a78bfa25, 0 0 18px #a78bfa38; }
+.journey-label { color: #858585; }
+.journey-label.is-bright { color: #f5f5f5; }
+.journey-status strong { color: var(--cyan); }
+.journey-connector { background: #454545; }
+.journey-connector span { background: linear-gradient(90deg, #69d5ba, var(--violet)); }
+.hero-footnote { color: #9a9a9a; }
+.hero-footnote i { background: var(--cyan); }
+.content-section { border-color: #ffffff10; }
+.section-tinted { background: #08080bf5; }
+.section-heading p { color: #a3a3a3; }
+.process-card,
+.capability-card { border-color: #ffffff1c; background: #09090cf7; box-shadow: 0 14px 40px #0006; }
+.process-card:hover { border-color: #a78bfa88; background: #100e16; box-shadow: 0 16px 42px #0009, 0 0 24px #a78bfa0d; }
+.card-number,
+.capability-number { color: #c4b2ff; }
+.process-card h3,
+.capability-card h3 { color: #f0f0f0; }
+.process-card p,
+.capability-card p { color: #aaa; }
+.capability-number { border-color: #a78bfa50; background: #17121f; }
+.architecture-node,
+.node-cyan,
+.node-green,
+.node-amber,
+.node-neutral { border-color: #ffffff2c; background: #0d0d10; }
+.node-cyan { border-color: #78dce85c; background: #0b1518; }
+.node-cyan strong { color: #91e4ed; }
+.node-green { border-color: #69d5ba55; background: #0a1511; }
+.node-green strong { color: #8be1c8; }
+.node-amber { border-color: #efbd6a55; background: #171108; }
+.node-amber strong { color: #f3c77c; }
+.architecture-node span,
+.monitoring-strip { color: #aaa; }
+.flow-arrow,
+.branch-arrow { color: #ddd; }
+.monitoring-strip b { color: #eee; }
+.stack-list span { border-color: #ffffff24; color: #ddd; background: #101010; }
+.closing-card { border-color: #a78bfa45; background: radial-gradient(ellipse at 50% 0, #7045ce24, transparent 68%), #09090cf7; }
+.closing-card p { color: #aaa; }
+.home-footer { border-color: #ffffff20; color: #999; }
+.home-footer > a:last-child { color: #eee; }
+.home-footer > a:last-child:hover { color: #fff; }
+
+@media (max-width: 760px) {
+  .home-atmosphere { height: 48rem; opacity: 0.13; }
+  .home-page > main { background: linear-gradient(to bottom, transparent 0, #050505 48rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-page *,
+  .home-page *::before,
+  .home-page *::after { scroll-behavior: auto !important; }
+}

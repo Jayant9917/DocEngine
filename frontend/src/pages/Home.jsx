@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import './Home.css'
+import './HomeMonochrome.css'
+
+const Dither = lazy(() => import('../components/Dither'))
 
 const journey = ['Uploaded', 'Queued', 'Processing', 'Completed', 'Download']
 
@@ -24,6 +27,9 @@ const capabilities = [
 ]
 
 const stack = ['React', 'Vite', 'Spring Boot', 'PostgreSQL', 'RabbitMQ', 'MinIO', 'Prometheus', 'Grafana', 'Docker Compose']
+const architectureNodeOrder = ['Browser', 'React', 'Spring Boot', 'PostgreSQL', 'MinIO', 'RabbitMQ', 'DocEngine Worker']
+const ditherWaveColor = [0.68, 0.68, 0.68]
+const ditherBackgroundColor = [0.012, 0.012, 0.012]
 
 export default function Home() {
   const [activeStep, setActiveStep] = useState(0)
@@ -40,9 +46,9 @@ export default function Home() {
   return (
     <div className="home-page">
       <div className="home-atmosphere" aria-hidden="true">
-        <span className="aurora aurora-one" />
-        <span className="aurora aurora-two" />
-        <div className="star-field">{Array.from({ length: 24 }, (_, i) => <i key={i} style={{ '--particle': i }} />)}</div>
+        <Suspense fallback={null}>
+          <Dither waveColor={ditherWaveColor} backgroundColor={ditherBackgroundColor} colorNum={2} pixelSize={3} waveSpeed={0.025} />
+        </Suspense>
       </div>
 
       <motion.nav className="home-nav" initial={{ y: -18, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.45 }}>
@@ -104,7 +110,7 @@ export default function Home() {
             </motion.div>
             <div className="process-grid">
               {processSteps.map(([number, title, description], index) => (
-                <motion.article className="process-card" key={number} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-35px' }} transition={{ delay: index * 0.06 }} whileHover={reducedMotion ? undefined : { y: -5 }}>
+                <motion.article className="process-card" key={number} initial={reducedMotion ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 + index * 0.07, duration: 0.45 }} whileHover={reducedMotion ? undefined : { y: -5 }}>
                   <span className="card-number">{number}</span><h3>{title}</h3><p>{description}</p>
                 </motion.article>
               ))}
@@ -119,7 +125,7 @@ export default function Home() {
             </motion.div>
             <div className="capability-grid">
               {capabilities.map(([number, title, description], index) => (
-                <motion.article className="capability-card" key={number} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-35px' }} transition={{ delay: index * 0.06 }}>
+                <motion.article className="capability-card" key={number} initial={reducedMotion ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.07, duration: 0.45 }}>
                   <span className="capability-number">{number}</span><div><h3>{title}</h3><p>{description}</p></div>
                 </motion.article>
               ))}
@@ -132,19 +138,19 @@ export default function Home() {
             <motion.div className="section-heading" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
               <span className="section-kicker">SYSTEM MAP</span><h2>Small services. One connected flow.</h2><p>Each part has a focused role; the queue separates request handling from report generation.</p>
             </motion.div>
-            <motion.div className="architecture-card" initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}>
+            <motion.div className="architecture-card" initial={reducedMotion ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
               <div className="architecture-flow">
-                <ArchitectureNode label="Browser" detail="User" kind="neutral" /><span className="flow-arrow">→</span>
-                <ArchitectureNode label="React" detail="Frontend" kind="cyan" /><span className="flow-arrow">→</span>
-                <ArchitectureNode label="Spring Boot" detail="API" kind="cyan" />
+                <ArchitectureNode label="Browser" detail="User" kind="neutral" reducedMotion={reducedMotion} /><span className="flow-arrow">→</span>
+                <ArchitectureNode label="React" detail="Frontend" kind="cyan" reducedMotion={reducedMotion} /><span className="flow-arrow">→</span>
+                <ArchitectureNode label="Spring Boot" detail="API" kind="cyan" reducedMotion={reducedMotion} />
               </div>
               <div className="architecture-branches">
                 <div className="branch-line" />
-                <ArchitectureNode label="PostgreSQL" detail="Jobs · tenants · status" kind="green" />
-                <ArchitectureNode label="MinIO" detail="CSV · PDF · CSV results" kind="green" />
-                <ArchitectureNode label="RabbitMQ" detail="Async job queue" kind="amber" />
+                <ArchitectureNode label="PostgreSQL" detail="Jobs · tenants · status" kind="green" reducedMotion={reducedMotion} />
+                <ArchitectureNode label="MinIO" detail="CSV · PDF · CSV results" kind="green" reducedMotion={reducedMotion} />
+                <ArchitectureNode label="RabbitMQ" detail="Async job queue" kind="amber" reducedMotion={reducedMotion} />
                 <span className="branch-arrow">↓</span>
-                <ArchitectureNode label="DocEngine Worker" detail="Atomic claim · report generation" kind="cyan" />
+                <ArchitectureNode label="DocEngine Worker" detail="Atomic claim · report generation" kind="cyan" reducedMotion={reducedMotion} />
               </div>
               <div className="monitoring-strip"><span>OBSERVABILITY</span><b>Prometheus</b><i>scrapes metrics</i><span className="flow-arrow">→</span><b>Grafana</b><i>visualizes metrics</i></div>
             </motion.div>
@@ -165,11 +171,12 @@ export default function Home() {
           </motion.div>
         </section>
       </main>
-      <footer className="home-footer"><a className="home-logo" href="#top"><span className="logo-orb" />DOCENGINE</a><span>Local-development MVP · Not a production service</span><a href="/DOCENGINE-ARCHITECTURE.html">Architecture details ↗</a></footer>
+      <footer className="home-footer"><a className="home-logo" href="#top"><span className="logo-orb" />DOCENGINE</a><span>One API · One worker · Horizontally scalable</span><a href="#architecture">Architecture details ↗</a></footer>
     </div>
   )
 }
 
-function ArchitectureNode({ label, detail, kind }) {
-  return <div className={`architecture-node node-${kind}`}><strong>{label}</strong><span>{detail}</span></div>
+function ArchitectureNode({ label, detail, kind, reducedMotion }) {
+  const nodeIndex = architectureNodeOrder.indexOf(label)
+  return <motion.div className={`architecture-node node-${kind}`} initial={reducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + nodeIndex * 0.08, duration: 0.35 }}><strong>{label}</strong><span>{detail}</span></motion.div>
 }
