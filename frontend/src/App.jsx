@@ -7,7 +7,7 @@ import './pages/UploadMonochrome.css'
 
 const Dither = lazy(() => import('./components/Dither'))
 
-const API_BASE_URL = 'http://127.0.0.1:8081'
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8081').replace(/\/$/, '')
 const STATUS_STEPS = ['Uploaded', 'Queued', 'Processing', 'Completed', 'Download']
 const ditherWaveColor = [0.58, 0.58, 0.58]
 const ditherBackgroundColor = [0.012, 0.012, 0.012]
