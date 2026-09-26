@@ -267,7 +267,7 @@ database/migrations/   Flyway SQL migrations
 docs/                  Architecture, API, setup, and platform documentation
 infra/                 Prometheus and Grafana provisioning
 tests/                 Integration fixtures and load tests
-dummy/                 Sample CSV datasets
+dummy data/            Sample CSV datasets
 ```
 
 ## Build and tests

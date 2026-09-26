@@ -220,7 +220,7 @@ function UploadPage() {
           )}
         </AnimatePresence>
 
-        <aside className="upload-tip"><span aria-hidden="true">✦</span><p><strong>Quick demo tip</strong> Use <code>demo-tenant-key</code> locally and choose one of the sample CSV files in the project’s <code>dummy/</code> folder.</p></aside>
+        <aside className="upload-tip"><span aria-hidden="true">✦</span><p><strong>Quick demo tip</strong> Use <code>demo-tenant-key</code> locally and choose one of the sample CSV files in the project’s <code>dummy data/</code> folder.</p></aside>
         <footer className="upload-footer">DOCENGINE <span>·</span> ASYNC REPORT PROCESSING</footer>
       </div>
     </main>

@@ -2,17 +2,9 @@
 
 DocEngine is a distributed document-processing platform. It currently demonstrates CSV upload, asynchronous job processing, and PDF/CSV report generation, while its API, queue, worker, object-storage, and monitoring architecture is designed to support multiple document-processing workloads.
 
-The HTTP API accepts requests quickly and sends report work to RabbitMQ. One or more workers claim queued jobs from PostgreSQL and process them asynchronously. MinIO stores uploaded files and generated reports. Prometheus collects API/worker metrics, which Grafana displays in a provisioned dashboard.
+The HTTP API accepts requests quickly and sends report work to RabbitMQ. The current deployment uses one API instance and one worker instance; additional instances can be added to scale request handling and document processing horizontally. MinIO stores uploaded files and generated reports. Prometheus collects API/worker metrics, which Grafana displays in a provisioned dashboard.
 
 ## Architecture
-
-```text
-Browser → React frontend → Spring API → PostgreSQL
-                              ├──────→ MinIO (CSV and reports)
-                              └──────→ RabbitMQ → Worker → MinIO
-
-Prometheus ← scrapes API and Worker       Grafana → Prometheus
-```
 
 ![DocEngine architecture](tests/Project%20monitioring/docengine-architecture%20.png)
 
@@ -25,7 +17,7 @@ Prometheus ← scrapes API and Worker       Grafana → Prometheus
 - Atomic worker job claims and lease/heartbeat recovery behavior.
 - PDF and CSV report output.
 - Prometheus application/JVM/HTTP/Tomcat metrics and a provisioned Grafana overview dashboard.
-- k6 real-flow load-test script (optional; not needed for normal development).
+- k6 real-flow load-test script for measuring throughput, queue behavior, and worker scaling.
 
 ## Quick start
 
@@ -94,7 +86,7 @@ npm run lint
 
 ## Optional load testing
 
-The k6 script creates real CSV uploads and report-job submissions. It is optional and can consume significant CPU, memory, database connections, and object storage. Start with a conservative VU count and read [tests/load/README.md](tests/load/README.md) before running it.
+The k6 script creates real CSV uploads and report-job submissions. It can consume significant CPU, memory, database connections, and object storage, so start with a conservative VU count. Read [tests/load/README.md](tests/load/README.md) before running it.
 
 ## Project layout
 
@@ -108,7 +100,7 @@ database/migrations/  Flyway SQL migrations
 docs/                 Compose file and MVP documentation
 infra/                Prometheus and Grafana provisioning
 tests/                Integration fixtures and optional k6 load test
-dummy/                Sample CSV datasets for manual testing
+dummy data/           Sample CSV datasets for manual testing
 ```
 
 ## Further documentation
@@ -127,4 +119,4 @@ dummy/                Sample CSV datasets for manual testing
 
 ## Security note
 
-Do not commit `.env`, production secrets, real tenant API keys, or customer data. Rotate the example credentials and replace the demo tenant/API key before exposing this stack to a network. The Compose setup is intended for local development.
+Do not commit `.env`, production secrets, real tenant API keys, or customer data. Rotate the example credentials and replace the demo tenant/API key before deploying this stack to a shared or public environment.
