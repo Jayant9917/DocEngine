@@ -15,7 +15,7 @@ const ditherBackgroundColor = [0.012, 0.012, 0.012]
 
 function getCurrentStep(upload, job) {
   if (!job) return upload ? 0 : -1
-  if (job.status === 'FAILED') return 2
+  if (job.status === 'FAILED' || job.status === 'CANCELLED') return 2
   if (job.status === 'COMPLETED' && job.resultUrl) return 4
   return job.status === 'PROCESSING' ? 2 : 1
 }
@@ -135,7 +135,7 @@ function UploadPage() {
     <main className="upload-page">
       <div className="upload-atmosphere" aria-hidden="true">
         <Suspense fallback={null}>
-          <Dither waveColor={ditherWaveColor} backgroundColor={ditherBackgroundColor} colorNum={2} pixelSize={3} waveSpeed={0.025} />
+          <Dither waveColor={ditherWaveColor} backgroundColor={ditherBackgroundColor} colorNum={2} pixelSize={3} waveSpeed={0.08} disableAnimation={false} />
         </Suspense>
       </div>
       <div className="app-frame">
@@ -227,6 +227,7 @@ function UploadPage() {
                   </div>
                   <p className="job-id-line">JOB ID <code>{job.jobId}</code></p>
                   {job.status === 'FAILED' && <p className="job-failure">The PDF could not be generated. Check that the CSV has a header row and consistent columns, then try again.</p>}
+                  {job.status === 'CANCELLED' && <p className="job-failure">This conversion was cancelled before the PDF was made available.</p>}
                   {job.resultUrl && <a className="report-download" href={job.resultUrl} target="_blank" rel="noreferrer"><span aria-hidden="true">↓</span> Download your PDF report</a>}
                 </div>
               )}

@@ -27,7 +27,7 @@ const capabilities = [
   ['06', 'Observable services', 'Prometheus collects API and worker metrics for the Grafana dashboard.'],
 ]
 
-const stack = ['React', 'Vite', 'Spring Boot', 'PostgreSQL', 'RabbitMQ', 'S3 / MinIO', 'Prometheus', 'Grafana', 'Docker Compose']
+const stack = ['React', 'Vite', 'Spring Boot', 'PostgreSQL', 'RabbitMQ', 'S3 / MinIO', 'AWS', 'Prometheus', 'Grafana', 'Docker Compose']
 const architectureNodeOrder = ['Browser', 'React', 'Spring Boot', 'PostgreSQL', 'Object storage', 'RabbitMQ', 'DocEngine Worker']
 const ditherWaveColor = [0.68, 0.68, 0.68]
 const ditherBackgroundColor = [0.012, 0.012, 0.012]
@@ -48,7 +48,7 @@ export default function Home() {
     <div className="home-page">
       <div className="home-atmosphere" aria-hidden="true">
         <Suspense fallback={null}>
-          <Dither waveColor={ditherWaveColor} backgroundColor={ditherBackgroundColor} colorNum={2} pixelSize={3} waveSpeed={0.025} />
+          <Dither waveColor={ditherWaveColor} backgroundColor={ditherBackgroundColor} colorNum={2} pixelSize={3} waveSpeed={0.08} disableAnimation={false} />
         </Suspense>
       </div>
 
@@ -72,14 +72,13 @@ export default function Home() {
               <span className="eyebrow-dot" /> DISTRIBUTED REPORT PROCESSING
             </motion.div>
             <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16, duration: 0.6 }}>
-              Background work,<br /><span>without the wait.</span>
+              Upload once.<br /><span>Process reliably.</span><br /><span>Download when ready.</span>
             </motion.h1>
             <motion.p className="hero-copy" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }}>
               Upload a header-based CSV and get a downloadable PDF containing its data while DocEngine handles conversion in the background.
             </motion.p>
             <motion.div className="hero-buttons" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.34 }}>
               <Link to="/upload" className="button-primary">Try DocEngine <span aria-hidden="true">→</span></Link>
-              <a href="#how-it-works" className="button-secondary">Explore how it works</a>
             </motion.div>
 
             <motion.div className="journey-card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
@@ -173,12 +172,14 @@ export default function Home() {
           </motion.div>
         </section>
       </main>
-      <footer className="home-footer"><a className="home-logo" href="#top"><span className="logo-orb" />DOCENGINE</a><span>One API · One worker · Horizontally scalable</span><a href="#architecture">Architecture details ↗</a></footer>
+      <footer className="home-footer"><div className="footer-brand"><a className="home-logo" href="#top"><span className="logo-orb" />DOCENGINE</a><p>Reliable asynchronous CSV-to-PDF processing.</p></div><div className="footer-status"><span><i /> API ready</span><small>One API · One worker · S3 / MinIO</small></div></footer>
     </div>
   )
 }
 
 function ArchitectureNode({ label, detail, kind, reducedMotion }) {
   const nodeIndex = architectureNodeOrder.indexOf(label)
-  return <motion.div className={`architecture-node node-${kind}`} initial={reducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + nodeIndex * 0.08, duration: 0.35 }}><strong>{label}</strong><span>{detail}</span></motion.div>
+  const iconMap = { React: 'react.svg', 'Spring Boot': 'springboot.svg', PostgreSQL: 'postgresql.svg', RabbitMQ: 'rabbitmq.svg' }
+  const fallbackIcons = { Browser: '▣', 'Object storage': '▤', 'DocEngine Worker': '⚙' }
+  return <motion.div className={`architecture-node node-${kind}`} initial={reducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + nodeIndex * 0.08, duration: 0.35 }}><span className="architecture-icon" aria-hidden="true">{iconMap[label] ? <img src={`/architecture-icons/${iconMap[label]}`} alt="" /> : fallbackIcons[label]}</span><strong>{label}</strong><span>{detail}</span></motion.div>
 }

@@ -209,7 +209,7 @@ function DitheredWaves({ waveSpeed, waveFrequency, waveAmplitude, waveColor, bac
 export default function Dither({ waveSpeed = 0.05, waveFrequency = 3, waveAmplitude = 0.3, waveColor = DEFAULT_WAVE_COLOR, backgroundColor = DEFAULT_BACKGROUND_COLOR, colorNum = 2, pixelSize = 3, disableAnimation, enableMouseInteraction = false, mouseRadius = 1 }) {
   const prefersReducedMotion = useReducedMotion()
   return (
-    <Canvas className="dither-container" camera={{ position: [0, 0, 6] }} dpr={1} gl={{ antialias: false }}>
+    <Canvas className="dither-container" frameloop="always" camera={{ position: [0, 0, 6] }} dpr={1} gl={{ antialias: false }}>
       <DitheredWaves
         waveSpeed={waveSpeed}
         waveFrequency={waveFrequency}
