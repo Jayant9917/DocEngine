@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: docengine-api
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/docengine}
+    username: ${SPRING_DATASOURCE_USERNAME:docengine}
+    password: ${SPRING_DATASOURCE_PASSWORD:docengine-local-password}
+
+  flyway:
+    locations: ${SPRING_FLYWAY_LOCATIONS:filesystem:database/migrations}
+    baseline-on-migrate: true
+
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:docengine}
+    password: ${SPRING_RABBITMQ_PASSWORD:docengine-local-password}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    prometheus:
+      access: unrestricted
+
+server:
+  port: 8080
+  tomcat:
+    mbeanregistry:
+      enabled: true
+
+docengine:
+  storage:
+    endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+    public-endpoint: ${MINIO_PUBLIC_ENDPOINT:http://127.0.0.1:9000}
+    access-key: ${MINIO_ACCESS_KEY:docengine}
+    secret-key: ${MINIO_SECRET_KEY:docengine-local-password}
+    input-bucket: ${MINIO_INPUT_BUCKET:docengine-inputs}
+    result-bucket: ${MINIO_RESULT_BUCKET:docengine-results}
+    result-url-expiry-seconds: ${MINIO_RESULT_URL_EXPIRY_SECONDS:900}

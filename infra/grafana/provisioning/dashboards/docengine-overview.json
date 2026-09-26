@@ -1,0 +1,145 @@
+{
+  "uid": "docengine-overview",
+  "title": "DocEngine — System Overview",
+  "description": "DocEngine API, worker, job pipeline, JVM, database pool, and RabbitMQ overview.",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "id": 1, "type": "row", "title": "Bottleneck: Thread Saturation", "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "panels": []
+    },
+    {
+      "id": 2, "type": "stat", "title": "Tomcat Thread Pool Utilization", "description": "Busy request threads as a percentage of configured max threads.",
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 1 },
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 60 }, { "color": "red", "value": 80 }] }, "color": { "mode": "thresholds" } }, "overrides": [] },
+      "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" }, "orientation": "auto", "textMode": "auto", "wideLayout": true, "colorMode": "background", "graphMode": "area", "justifyMode": "auto", "showPercentChange": false },
+      "targets": [{ "expr": "100 * tomcat_threads_busy_threads / tomcat_threads_config_max_threads", "legendFormat": "{{job}}", "refId": "A" }]
+    },
+    {
+      "id": 3, "type": "timeseries", "title": "Busy vs Configured Tomcat Threads", "description": "Compare busy threads against the configured thread-pool capacity per service.",
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "gridPos": { "h": 8, "w": 9, "x": 6, "y": 1 },
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 8, "showPoints": "never", "stacking": { "mode": "none", "group": "A" } } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "expr": "tomcat_threads_busy_threads", "legendFormat": "{{job}} busy", "refId": "A" },
+        { "expr": "tomcat_threads_config_max_threads", "legendFormat": "{{job}} max", "refId": "B" }
+      ]
+    },
+    {
+      "id": 4, "type": "timeseries", "title": "Average MinIO Upload Duration", "description": "Average duration of instrumented API uploads. No samples appear until uploads have occurred since startup.",
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "gridPos": { "h": 8, "w": 9, "x": 15, "y": 1 },
+      "fieldConfig": { "defaults": { "unit": "s", "color": { "mode": "fixed", "fixedColor": "#22d3ee" }, "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "expr": "rate(docengine_upload_duration_seconds_sum[1m]) / rate(docengine_upload_duration_seconds_count[1m])", "legendFormat": "Upload average", "refId": "A" }]
+    },
+    {
+      "id": 5, "type": "row", "title": "API Traffic", "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 }, "panels": []
+    },
+    {
+      "id": 6, "type": "timeseries", "title": "HTTP Request Rate", "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 10 },
+      "fieldConfig": { "defaults": { "unit": "reqps", "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "expr": "sum by (job) (rate(http_server_requests_seconds_count[1m]))", "legendFormat": "{{job}}", "refId": "A" }]
+    },
+    {
+      "id": 7, "type": "timeseries", "title": "Average HTTP Request Latency", "description": "Uses summary sum/count because the current Spring metrics expose no _bucket series. This is a mean, not P95.", "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 10 },
+      "fieldConfig": { "defaults": { "unit": "s", "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 8, "showPoints": "never" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "expr": "sum by (job) (rate(http_server_requests_seconds_sum[5m])) / sum by (job) (rate(http_server_requests_seconds_count[5m]))", "legendFormat": "{{job}} mean", "refId": "A" }]
+    },
+    {
+      "id": 8, "type": "timeseries", "title": "HTTP Responses by Status Code", "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 10 },
+      "fieldConfig": { "defaults": { "unit": "reqps", "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "bars", "lineWidth": 1, "fillOpacity": 75, "showPoints": "never", "stacking": { "mode": "normal", "group": "status" } } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "expr": "sum by (status) (rate(http_server_requests_seconds_count[1m]))", "legendFormat": "HTTP {{status}}", "refId": "A" }]
+    },
+    {
+      "id": 9, "type": "row", "title": "Job Pipeline", "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 }, "panels": []
+    },
+    {
+      "id": 10, "type": "timeseries", "title": "Job Events per Second", "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "gridPos": { "h": 8, "w": 14, "x": 0, "y": 19 },
+      "fieldConfig": { "defaults": { "unit": "ops", "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 8, "showPoints": "never" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "expr": "rate(docengine_jobs_received_total[1m])", "legendFormat": "Received", "refId": "A" },
+        { "expr": "rate(docengine_jobs_claimed_total[1m])", "legendFormat": "Claimed", "refId": "B" },
+        { "expr": "rate(docengine_jobs_claim_conflicts_total[1m])", "legendFormat": "Claim conflicts", "refId": "C" },
+        { "expr": "rate(docengine_jobs_completed_total[1m])", "legendFormat": "Completed", "refId": "D" },
+        { "expr": "rate(docengine_jobs_failed_total[1m])", "legendFormat": "Failed", "refId": "E" }
+      ]
+    },
+    {
+      "id": 11, "type": "timeseries", "title": "Average Job Processing Duration", "description": "Claim-to-finish duration for worker jobs. It appears after at least one job is processed.", "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "gridPos": { "h": 8, "w": 10, "x": 14, "y": 19 },
+      "fieldConfig": { "defaults": { "unit": "s", "color": { "mode": "fixed", "fixedColor": "#22d3ee" }, "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 8, "showPoints": "never" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "expr": "rate(docengine_job_processing_seconds_sum[1m]) / rate(docengine_job_processing_seconds_count[1m])", "legendFormat": "Worker average", "refId": "A" }]
+    },
+    {
+      "id": 12, "type": "row", "title": "JVM Resources", "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 }, "panels": []
+    },
+    {
+      "id": 13, "type": "timeseries", "title": "JVM Heap Used vs Maximum", "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "gridPos": { "h": 8, "w": 9, "x": 0, "y": 28 },
+      "fieldConfig": { "defaults": { "unit": "bytes", "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "expr": "sum by (job) (jvm_memory_used_bytes{area=\"heap\"})", "legendFormat": "{{job}} used", "refId": "A" },
+        { "expr": "sum by (job) (jvm_memory_max_bytes{area=\"heap\"} > 0)", "legendFormat": "{{job}} max", "refId": "B" }
+      ]
+    },
+    {
+      "id": 14, "type": "timeseries", "title": "Live JVM Threads", "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "gridPos": { "h": 8, "w": 7, "x": 9, "y": 28 },
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "lineWidth": 2, "showPoints": "never" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "expr": "jvm_threads_live_threads", "legendFormat": "{{job}}", "refId": "A" }]
+    },
+    {
+      "id": 15, "type": "timeseries", "title": "GC Pause Time Rate", "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 28 },
+      "fieldConfig": { "defaults": { "unit": "s", "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 8, "showPoints": "never" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "expr": "rate(jvm_gc_pause_seconds_sum[5m])", "legendFormat": "{{job}}", "refId": "A" }]
+    },
+    {
+      "id": 16, "type": "row", "title": "Database & Queue", "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 36 }, "panels": []
+    },
+    {
+      "id": 17, "type": "timeseries", "title": "HikariCP Connection Pool Utilization", "description": "Active connections divided by configured maximum per service.", "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 37 },
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100, "color": { "mode": "fixed", "fixedColor": "#22d3ee" }, "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 90 }] } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "expr": "100 * hikaricp_connections_active / hikaricp_connections_max", "legendFormat": "{{job}}", "refId": "A" }]
+    },
+    {
+      "id": 18, "type": "timeseries", "title": "RabbitMQ Published vs Consumed Rate", "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 37 },
+      "fieldConfig": { "defaults": { "unit": "ops", "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 8, "showPoints": "never" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "expr": "sum by (job) (rate(rabbitmq_published_total[1m]))", "legendFormat": "{{job}} published", "refId": "A" },
+        { "expr": "sum by (job) (rate(rabbitmq_consumed_total[1m]))", "legendFormat": "{{job}} consumed", "refId": "B" }
+      ]
+    }
+  ],
+  "annotations": { "list": [] },
+  "links": []
+}

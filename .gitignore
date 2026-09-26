@@ -1,0 +1,19 @@
+# Maven build output
+**/target/
+
+# Local environment and secrets
+.env
+!.env.example
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+
+# Logs
+*.log
+
+# Private and working documentation
+/docs/All Docs/
+/docs/my-notes/
+/Things/

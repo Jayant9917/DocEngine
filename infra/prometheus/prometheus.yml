@@ -1,0 +1,17 @@
+global:
+  # Prometheus pulls each target every 15 seconds.
+  # This is frequent enough to see short load spikes without scraping too often.
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: docengine-api
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - docengine-api:8080
+
+  - job_name: docengine-worker
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - docengine-worker:8082

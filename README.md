@@ -1,0 +1,132 @@
+# DocEngine
+
+DocEngine is a small distributed job-processing application. A user uploads a CSV, requests a monthly sales report, and receives a link to the generated PDF/CSV when background processing is complete.
+
+The HTTP API accepts requests quickly and sends report work to RabbitMQ. One or more workers claim queued jobs from PostgreSQL and process them asynchronously. MinIO stores uploaded files and generated reports. Prometheus collects API/worker metrics, which Grafana displays in a provisioned dashboard.
+
+> This repository is a local-development/MVP project, not a production-ready hosted service. The sample API key and credentials are for local testing only.
+
+## Architecture
+
+```text
+Browser → React frontend → Spring API → PostgreSQL
+                              ├──────→ MinIO (CSV and reports)
+                              └──────→ RabbitMQ → Worker → MinIO
+
+Prometheus ← scrapes API and Worker       Grafana → Prometheus
+```
+
+See the [interactive architecture diagram](DOCENGINE-ARCHITECTURE.html) and its [editable architecture source](DOCENGINE-ARCHITECTURE.architecture.json).
+
+## Main features
+
+- Tenant API-key authentication for upload and job endpoints.
+- CSV upload to MinIO and asynchronous monthly report jobs.
+- Job status polling and short-lived result download URLs.
+- Idempotent job submissions and tenant-isolated job reads.
+- Atomic worker job claims and lease/heartbeat recovery behavior.
+- PDF and CSV report output.
+- Prometheus application/JVM/HTTP/Tomcat metrics and a provisioned Grafana overview dashboard.
+- k6 real-flow load-test script (optional; not needed for normal development).
+
+## Quick start
+
+For detailed prerequisites, setup, commands, and troubleshooting, follow [SETUP.md](SETUP.md). In brief:
+
+1. Install Docker Desktop with Compose, Java 21, Maven 3.9+, and Node.js/npm.
+2. Copy `.env.example` to `.env` and adjust local-only credentials if desired.
+3. From the repository root, start the application stack:
+
+   ```powershell
+   docker compose --env-file .env -f docs/docker-compose.mvp.yml up -d --build
+   ```
+
+4. Start the frontend in a separate terminal:
+
+   ```powershell
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+5. Open `http://localhost:5173`. The local demo API key is `demo-tenant-key`.
+
+## Local service addresses
+
+| Service | Local address |
+|---|---|
+| Frontend (Vite) | `http://localhost:5173` |
+| DocEngine API | `http://127.0.0.1:8081` |
+| API health | `http://127.0.0.1:8081/actuator/health` |
+| API Prometheus metrics | `http://127.0.0.1:8081/actuator/prometheus` |
+| Worker Prometheus metrics | `http://127.0.0.1:8082/actuator/prometheus` |
+| Prometheus | `http://127.0.0.1:9090` |
+| Grafana | `http://127.0.0.1:3000` |
+| RabbitMQ management | `http://127.0.0.1:15672` |
+| MinIO console | `http://127.0.0.1:9001` |
+| pgAdmin | `http://127.0.0.1:5050` |
+| PostgreSQL from host tools | `127.0.0.1:5433` |
+
+Container-to-container traffic uses Compose service names and internal ports (for example, `postgres:5432` and `docengine-api:8080`). The host ports above are for tools running on your computer.
+
+## Verify the backend
+
+```powershell
+docker compose --env-file .env -f docs/docker-compose.mvp.yml ps
+curl.exe http://127.0.0.1:8081/actuator/health
+```
+
+The health response should report `{"status":"UP"}`. Then use the frontend or follow the [end-to-end setup walkthrough](SETUP.md#try-the-complete-report-flow).
+
+## Build and tests
+
+Run the Java reactor tests from the repository root:
+
+```powershell
+mvn test
+```
+
+Some integration tests require the local PostgreSQL container and the connection settings documented in `SETUP.md`. Build the frontend with:
+
+```powershell
+cd frontend
+npm run build
+npm run lint
+```
+
+## Optional load testing
+
+The k6 script creates real CSV uploads and report-job submissions. It is optional and can consume significant CPU, memory, database connections, and object storage. Start with a conservative VU count and read [tests/load/README.md](tests/load/README.md) before running it.
+
+## Project layout
+
+```text
+services/
+  docengine-api/       Spring Boot HTTP API
+  docengine-worker/    RabbitMQ background report worker
+  docengine-common/    Shared domain and messaging types
+frontend/             React + Vite user interface
+database/migrations/  Flyway SQL migrations
+docs/                 Compose file and MVP documentation
+infra/                Prometheus and Grafana provisioning
+tests/                Integration fixtures and optional k6 load test
+dummy/                Sample CSV datasets for manual testing
+```
+
+## Further documentation
+
+- [DocEngine platform overview](docs/DOCENGINE-OVERVIEW.md)
+- [Setup and run instructions](SETUP.md)
+- [Plain-language project overview](WHAT-IS-DOCENGINE.md)
+- [MVP scope](docs/MVP-SCOPE.md)
+- [MVP API reference](docs/MVP-API.md)
+- [MVP architecture](docs/MVP-ARCHITECTURE.md)
+- [MVP test plan](docs/MVP-TEST-PLAN.md)
+- [Load-test report](Project%20monitioring/LOAD-TEST-REPORT.md)
+- [Scaling and optimization notes](Project%20monitioring/SCALING-500-1000-USERS.md)
+- [Grafana dashboard reading guide](Project%20monitioring/GRAFANA-DASHBOARD-READING-GUIDE.md)
+- [Grafana metrics reference](Project%20monitioring/GRAFANA-METRICS-GUIDE.md)
+
+## Security note
+
+Do not commit `.env`, production secrets, real tenant API keys, or customer data. Rotate the example credentials and replace the demo tenant/API key before exposing this stack to a network. The Compose setup is intended for local development.

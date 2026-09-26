@@ -1,0 +1,156 @@
+# DocEngine local topology plus Prometheus and Grafana observability.
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: docengine-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-docengine}
+      POSTGRES_USER: ${POSTGRES_USER:-docengine}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-docengine}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-docengine}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: docengine-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-docengine}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-docengine}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: docengine-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-docengine}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-docengine123}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: docengine-pgadmin
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@docengine.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-docengine-pgadmin-password}
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmindata:/var/lib/pgadmin
+
+  docengine-api:
+    build:
+      context: ..
+      dockerfile: services/docengine-api/Dockerfile
+    container_name: docengine-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-docengine}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-docengine}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-docengine}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-docengine}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASS:-docengine}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-http://127.0.0.1:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-docengine}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-docengine123}
+      SPRING_FLYWAY_LOCATIONS: filesystem:/app/database/migrations
+    volumes:
+      - ../database/migrations:/app/database/migrations:ro
+    ports:
+      - "8081:8080"
+
+  docengine-worker:
+    build:
+      context: ..
+      dockerfile: services/docengine-worker/Dockerfile
+    container_name: docengine-worker
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-docengine}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-docengine}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-docengine}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-docengine}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASS:-docengine}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-docengine}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-docengine123}
+    ports:
+      - "8082:8082"
+    # To prove no-duplicate-processing manually:
+    # docker compose -f docs/docker-compose.mvp.yml up -d --scale docengine-worker=2
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: docengine-prometheus
+    restart: unless-stopped
+    depends_on:
+      docengine-api:
+        condition: service_started
+      docengine-worker:
+        condition: service_started
+    ports:
+      - "9090:9090"
+    volumes:
+      # Compose resolves this path from the docs/ directory.
+      - ../infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: docengine-grafana
+    restart: unless-stopped
+    depends_on:
+      prometheus:
+        condition: service_started
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-docengine-grafana-local-password}
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafanadata:/var/lib/grafana
+      - ../infra/grafana/provisioning:/etc/grafana/provisioning:ro
+
+volumes:
+  pgdata:
+  miniodata:
+  pgadmindata:
+  grafanadata:

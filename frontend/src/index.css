@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  color: #e5e7eb;
+  background: #09090b;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+.blinking-dots {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--dots-background);
+  opacity: var(--dot-coverage);
+  display: grid;
+  grid-template-columns: repeat(20, 1fr);
+  align-content: center;
+  gap: 7rem 5rem;
+  padding: 5rem;
+}
+
+.blinking-dot {
+  width: var(--dot-size);
+  height: var(--dot-size);
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--dots-from), var(--dots-to));
+  box-shadow: 0 0 10px var(--dots-from);
+  animation: dot-blink 2.8s ease-in-out infinite alternate;
+}
+
+.blinking-dot:nth-child(3n) { animation-delay: -1.2s; }
+.blinking-dot:nth-child(5n) { animation-delay: -2s; }
+
+@keyframes dot-blink {
+  from { opacity: 0.18; transform: scale(0.8); }
+  to { opacity: 0.85; transform: scale(1.4); }
+}
+
+.status-steps {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.status-step {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  position: relative;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.status-node {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid #64748b;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #64748b;
+  background: #0f172a;
+  z-index: 1;
+}
+
+.status-passed { border-color: #34d399; background: #34d399; color: #052e16; }
+.status-current { border-color: #22d3ee; background: #22d3ee; color: #083344; animation: status-pulse 1.6s ease-in-out infinite; }
+.status-failed { border-color: #f87171; background: #f87171; color: #450a0a; }
+.status-label { font-size: 0.7rem; text-align: center; color: #64748b; }
+.status-label-passed { color: #34d399; }
+.status-label-current { color: #22d3ee; }
+.status-label-failed { color: #f87171; }
+.status-line { height: 2px; background: #334155; position: absolute; top: 1rem; left: 50%; width: 100%; }
+.status-line-passed { background: #34d399; }
+
+@keyframes status-pulse {
+  50% { box-shadow: 0 0 0 7px rgb(34 211 238 / 0.12), 0 0 22px rgb(34 211 238 / 0.75); }
+}
+
+@media (max-width: 640px) {
+  .status-label { font-size: 0.6rem; }
+  .status-node { width: 1.7rem; height: 1.7rem; }
+}
