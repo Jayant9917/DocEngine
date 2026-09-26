@@ -1,0 +1,6 @@
+ticket_id,customer,priority,status,subject,opened_date,assigned_team
+TK-7301,Acme Retail,High,Open,Unable to export invoice,2026-09-03,Payments
+TK-7302,"Bright, North Ltd",Normal,In Progress,Update billing contact,2026-09-07,Customer Care
+TK-7303,Juniper Works,Low,Closed,Question about report columns,2026-09-12,Product Support
+TK-7304,Silverline Studio,High,Open,CSV upload rejected,2026-09-19,Platform
+TK-7305,Orchard Labs,Normal,Resolved,Reset API key,2026-09-25,Security

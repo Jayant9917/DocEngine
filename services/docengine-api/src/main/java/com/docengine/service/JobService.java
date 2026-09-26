@@ -67,10 +67,9 @@ public class JobService {
 
     private JobResponse createInternal(UUID tenantId, String idempotencyKey, JobRequest request) {
         if (request == null || request.jobType() == null || request.input() == null
-                || request.input().month() == null || request.input().month().isBlank()
                 || request.input().dataFile() == null || request.input().dataFile().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "jobType, input.month, and input.dataFile are required");
+                    "jobType and input.dataFile are required");
         }
         if (idempotencyKey == null || idempotencyKey.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Idempotency-Key is required");

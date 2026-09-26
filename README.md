@@ -2,21 +2,21 @@
 
 ## Distributed Document Processing Platform
 
-DocEngine is a distributed document-processing platform for accepting document-generation requests, placing them on a durable queue, processing them asynchronously with specialized workers, and storing the generated documents in object storage.
+DocEngine accepts header-based CSV uploads, queues conversion jobs, renders each record into a PDF, and stores the PDF in object storage. It supports varying column names and counts rather than requiring a sales-specific schema.
 
-The platform is designed for workloads such as invoices, reports, certificates, statements, bulk PDF generation, and customer notifications. The current implementation demonstrates the flow with CSV uploads and monthly PDF/CSV report generation.
+The architecture can be extended for other document types, but invoice, certificate, statement, bulk-PDF, and notification workers are future extensions—not current features.
 
-The application is structured as a distributed document-processing platform even though the current running configuration contains one API instance and one report-processing worker instance. The API and worker can be replicated when traffic, queue depth, or document volume increases.
+The application is structured as a distributed document-processing platform even though the current running configuration contains one API instance and one CSV-to-PDF worker instance. The API and worker can be replicated when traffic, queue depth, or document volume increases.
 
 ## What the application does
 
 DocEngine separates request handling from document generation:
 
 - The API accepts an authenticated request and returns quickly with a job identifier.
-- Uploaded source data is stored in MinIO/S3-compatible object storage.
+- Uploaded source data is stored in AWS S3 in the deployed environment (MinIO is used for local development).
 - PostgreSQL stores tenants, job metadata, status, idempotency records, and processing information.
 - RabbitMQ provides the durable handoff between the API and background workers.
-- Workers claim jobs safely, generate documents, and store the results in object storage.
+- The CSV-to-PDF worker claims jobs, includes all input records and columns in the PDF, and stores the result in object storage.
 - Clients poll job status and receive a short-lived download URL when the document is ready.
 - Prometheus and Grafana provide application, JVM, HTTP, database-pool, and worker-pipeline visibility.
 
@@ -26,7 +26,7 @@ DocEngine separates request handling from document generation:
 Client
   |
   v
-API Gateway / Spring API
+Spring Boot API
   |-- authenticate tenant and validate request
   |-- store input in object storage
   |-- create job metadata in PostgreSQL
@@ -34,11 +34,7 @@ API Gateway / Spring API
   v
 RabbitMQ queue
   |
-  +--> PDF Worker
-  +--> Report Worker
-  +--> Invoice Worker
-  +--> Certificate Worker
-  +--> Email / Notification Worker
+  +--> CSV-to-PDF worker (current implementation)
               |
               v
        Object Storage (S3 / MinIO)
@@ -47,11 +43,11 @@ RabbitMQ queue
        Status update + signed download URL
 ```
 
-The worker types shown above represent the platform's extensible processing model. The current MVP includes the report-processing worker and can be extended with additional processors without changing the API-to-queue pattern.
+Additional worker types can be added later using the same API-to-queue pattern.
 
 ## Supported document-processing model
 
-The job model can represent multiple document workloads:
+Potential future job types include:
 
 ```text
 INVOICE
@@ -61,7 +57,7 @@ STATEMENT
 BULK_PDF
 ```
 
-Each job type can be routed to a dedicated worker or queue. This keeps document-specific logic isolated and allows each worker group to scale independently.
+Dedicated queues and workers could be introduced for these job types. They are not currently implemented.
 
 Typical templates include:
 
@@ -70,37 +66,11 @@ Typical templates include:
 - Certificate template
 - Account statement template
 
-## Reliability and correctness
+## Implemented processing behavior
 
-DocEngine is designed around the failure modes of asynchronous processing:
+The current implementation includes tenant API-key authentication, upload and job endpoints, asynchronous RabbitMQ processing, idempotent job submission, atomic worker job claiming, lease/heartbeat recovery behavior, tenant-isolated job reads, and short-lived result download URLs. CSV input must be comma-delimited, have a header row, and use the same number of fields in each record. Quoted commas and multiline quoted fields are supported. PDF text currently normalizes characters outside basic ASCII, so non-Latin characters may be replaced.
 
-### Priority
-
-Jobs can be classified as `HIGH`, `NORMAL`, or `LOW` priority. For example, payment invoices can be processed ahead of monthly analytics reports.
-
-### Retries and dead-letter handling
-
-Transient worker failures can be retried with a bounded retry policy. Jobs that continue to fail are moved to a dead-letter queue for inspection and controlled replay.
-
-```text
-Worker failure
-      |
-      v
-   Retry 1 --> Retry 2 --> Retry 3
-                                  |
-                                  v
-                         Dead Letter Queue
-```
-
-### Idempotency
-
-An idempotency key prevents duplicate submissions from generating the same document more than once. If a client repeats a request with the same key, the API returns the existing job result instead of creating duplicate work.
-
-### Safe worker claiming
-
-Multiple workers can consume jobs concurrently. PostgreSQL-backed atomic claiming prevents two workers from processing the same job at the same time. Lease and heartbeat behavior allows abandoned work to be recovered after a worker failure.
-
-### Job lifecycle
+The job lifecycle exposed by the application includes:
 
 ```text
 QUEUED -> PROCESSING -> COMPLETED
@@ -112,7 +82,7 @@ QUEUED -> PROCESSING -> COMPLETED
              +-> CANCELLED
 ```
 
-Progress can be exposed as milestones such as `0%`, `25%`, `50%`, `75%`, and `100%` for long-running or bulk document jobs.
+Priority queues, a dedicated retry/dead-letter workflow, progress percentages, scheduled bulk generation, and notification delivery are not part of the current deployed feature set.
 
 ## Horizontal scaling
 
@@ -127,13 +97,13 @@ The API and workers are independently scalable:
                            Worker-4
 ```
 
-When traffic increases, more worker replicas can be added without changing the client or API contract. Different worker pools can also be scaled according to workload—for example, more invoice workers during billing periods and more report workers at month-end.
+When traffic increases, the API and worker can be replicated after validating database connection limits, queue behavior, storage throughput, and deployment capacity. The current deployment runs one API instance and one CSV-to-PDF worker; replicas and separate worker pools are scaling options, not active instances today.
 
 This design avoids making the API perform expensive document generation synchronously. The API remains responsive while the queue absorbs bursts and workers process jobs at a controlled rate.
 
-## Large-scale enterprise scenario
+## Example future scaling scenario
 
-Consider a bank generating monthly statements for millions of customers:
+For a future high-volume statement-generation workload:
 
 ```text
 Monthly scheduler / job producer
@@ -167,7 +137,7 @@ When an error or performance issue appears, the next bottleneck is usually in on
 
 The architecture makes these boundaries visible so each layer can be measured and scaled independently.
 
-## Technology responsibilities
+## Deployment services and technology responsibilities
 
 | Component | Responsibility |
 |---|---|
@@ -175,18 +145,31 @@ The architecture makes these boundaries visible so each layer can be measured an
 | Spring Boot API | Authentication, validation, uploads, job creation, status APIs |
 | PostgreSQL | Tenants, jobs, idempotency, status, and processing metadata |
 | RabbitMQ | Durable asynchronous job delivery and workload buffering |
-| Worker services | Document-specific processing and result generation |
+| Worker service | CSV parsing, PDF generation, and result storage |
 | MinIO / S3 | Source files and generated document storage |
 | Docker Compose | Reproducible service orchestration |
 | Prometheus | Metrics collection |
 | Grafana | Dashboards and operational visibility |
 
+The deployed application uses these services:
+
+| Service | Use in this deployment |
+|---|---|
+| Vercel | Hosts the React/Vite frontend |
+| AWS EC2 | Runs the backend containers with Docker Compose |
+| Amazon S3 | Stores uploaded CSVs and generated reports; the EC2 instance role grants access |
+| Supabase | Hosts PostgreSQL |
+| RabbitMQ | Queues report jobs inside the EC2 Compose network |
+| Cloudflare Quick Tunnel | Temporary HTTPS ingress to the EC2 API; it must be running, and its URL may change |
+
+The local development stack differs: it uses PostgreSQL and MinIO containers from `docs/docker-compose.mvp.yml`. Prometheus and Grafana are included in the local stack, but not in the production Compose stack described in `deploy/ec2/README.md`.
+
 ## Current deployment shape and scaling model
 
-The current working implementation runs with one API instance and one PDF/report worker instance:
+The current deployment runs with one API instance and one CSV-to-PDF worker instance:
 
 ```text
-Client -> API instance -> RabbitMQ -> PDF/report worker instance
+Client -> API instance -> RabbitMQ -> CSV-to-PDF worker instance
 ```
 
 The services can scale horizontally when required:
@@ -229,7 +212,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173` and use the demo tenant key documented in [SETUP.md](../SETUP.md).
+Open `http://localhost:5173` and use the demo tenant key documented in [SETUP.md](SETUP.md).
 
 ### Verify the services
 
@@ -238,7 +221,7 @@ docker compose --env-file .env -f docs/docker-compose.mvp.yml ps
 curl.exe http://127.0.0.1:8081/actuator/health
 ```
 
-The API health endpoint should return a healthy status. The complete upload-to-report flow is documented in [SETUP.md](../SETUP.md).
+The API health endpoint should return a healthy status. The complete upload-to-PDF flow is documented in [SETUP.md](SETUP.md).
 
 ## Service addresses
 
@@ -282,21 +265,22 @@ npm run build
 npm run lint
 ```
 
-The optional k6 flow test creates real uploads and report jobs to study throughput, queue behavior, worker scaling, and bottlenecks. See [tests/load/README.md](../tests/load/README.md).
+The optional k6 flow test creates real uploads and conversion jobs to study throughput, queue behavior, worker scaling, and bottlenecks. See [tests/load/README.md](tests/load/README.md).
 
 ## Related documentation
 
-- [Setup and run instructions](../SETUP.md)
+- [Setup and run instructions](SETUP.md)
 - [EC2 production Compose setup](deploy/ec2/README.md)
-- [MIT License](../LICENSE)
-- [Code of Conduct](../CODE_OF_CONDUCT.md)
+- [Platform overview](docs/DOCENGINE-OVERVIEW.md)
+- [MIT License](LICENSE)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
 
 ## Current demonstration flow
 
 The working demonstration currently focuses on:
 
 ```text
-CSV upload -> asynchronous monthly report job -> PDF/CSV result
+Header-based CSV upload -> asynchronous conversion job -> PDF result
 ```
 
 This demonstrates the same core patterns required for a broader document platform: authenticated APIs, durable queues, asynchronous workers, idempotency, safe job claiming, object storage, result links, retries, observability, and horizontal worker scaling.

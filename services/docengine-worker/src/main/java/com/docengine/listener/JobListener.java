@@ -4,7 +4,7 @@ import com.docengine.config.WorkerRabbitConfig;
 import com.docengine.entity.Job;
 import com.docengine.enums.JobStatus;
 import com.docengine.messaging.JobMessage;
-import com.docengine.processor.MonthlyReportProcessor;
+import com.docengine.processor.CsvToPdfProcessor;
 import com.docengine.repository.WorkerJobRepository;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class JobListener {
     private final WorkerJobRepository jobRepository;
-    private final MonthlyReportProcessor processor;
+    private final CsvToPdfProcessor processor;
     private final boolean crashAfterClaim;
     private final int leaseSeconds;
     private final int testProcessingDelaySeconds;
@@ -36,7 +36,7 @@ public class JobListener {
     private final Counter failedCounter;
     private final Timer processingTimer;
 
-    public JobListener(WorkerJobRepository jobRepository, MonthlyReportProcessor processor,
+    public JobListener(WorkerJobRepository jobRepository, CsvToPdfProcessor processor,
                        @Value("${docengine.test.crash-after-claim:false}") boolean crashAfterClaim,
                        @Value("${docengine.worker.lease-seconds:300}") int leaseSeconds,
                        @Value("${docengine.test.processing-delay-seconds:0}") int testProcessingDelaySeconds,

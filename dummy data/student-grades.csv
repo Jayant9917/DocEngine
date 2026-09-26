@@ -1,0 +1,6 @@
+student_id,student_name,course,assignment_score,exam_score,letter_grade
+ST-2041,Aarav Mehta,Mathematics,88,92,A
+ST-2042,Maya Chen,History,79,84,B
+ST-2043,Noah Patel,Biology,95,91,A
+ST-2044,Sofia Garcia,Computer Science,86,89,B
+ST-2045,Leo Kim,Physics,73,81,B

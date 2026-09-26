@@ -4,6 +4,7 @@ import { BrowserRouter, Link, Route, Routes } from 'react-router-dom'
 import Home from './pages/Home'
 import './pages/UploadPage.css'
 import './pages/UploadMonochrome.css'
+import './design.css'
 
 const Dither = lazy(() => import('./components/Dither'))
 
@@ -24,7 +25,6 @@ function UploadPage() {
   const [file, setFile] = useState(null)
   const [apiKey, setApiKey] = useState('demo-tenant-key')
   const [upload, setUpload] = useState(null)
-  const [month, setMonth] = useState('2026-01')
   const [job, setJob] = useState(null)
   const [error, setError] = useState('')
   const [isUploading, setIsUploading] = useState(false)
@@ -104,7 +104,7 @@ function UploadPage() {
   }
 
   async function handleCreateJob() {
-    if (!upload || !month) return
+    if (!upload) return
     setError('')
     setJob(null)
     setIsCreatingJob(true)
@@ -113,16 +113,16 @@ function UploadPage() {
         method: 'POST',
         headers: {
           'X-API-Key': apiKey,
-          'Idempotency-Key': `frontend-${upload.uploadId}-${month}`,
+          'Idempotency-Key': `frontend-${upload.uploadId}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          jobType: 'GENERATE_MONTHLY_REPORT',
-          input: { month, dataFile: upload.inputReference },
+          jobType: 'CONVERT_CSV_TO_PDF',
+          input: { dataFile: upload.inputReference },
         }),
       })
       const body = await response.json()
-      if (!response.ok) throw new Error(body.message || body.error || 'Could not create report job.')
+      if (!response.ok) throw new Error(body.message || body.error || 'Could not create PDF conversion job.')
       setJob(body)
     } catch (jobError) {
       setError(jobError.message || 'Could not connect to the DocEngine API.')
@@ -138,12 +138,19 @@ function UploadPage() {
           <Dither waveColor={ditherWaveColor} backgroundColor={ditherBackgroundColor} colorNum={2} pixelSize={3} waveSpeed={0.025} />
         </Suspense>
       </div>
-      <div className="upload-shell">
+      <div className="app-frame">
+        <aside className="app-sidebar" aria-label="Primary navigation">
+          <Link to="/" className="brand-lockup"><img className="brand-image" src="/folder.png" alt="" /><span>DOCENGINE<small>DOCUMENT PIPELINE</small></span></Link>
+          <nav className="side-nav"><span className="nav-label">WORKSPACE</span><Link to="/" className="side-link"><span>⌂</span> Dashboard</Link><Link to="/upload" className="side-link is-active"><span>＋</span> New job</Link><span className="side-link is-muted"><span>≡</span> Jobs <em>coming soon</em></span><span className="side-link is-muted"><span>↗</span> Results <em>coming soon</em></span><span className="nav-label nav-label-spaced">OPERATIONS</span><span className="side-link is-muted"><span>◌</span> System status <em>live soon</em></span></nav>
+          <div className="sidebar-foot"><span className="status-dot" /> API connected locally <small>v1 · one worker</small></div>
+        </aside>
+        <div className="app-content"><header className="app-topbar"><button className="mobile-menu" aria-label="Open navigation">☰</button><div><span className="topbar-kicker">WORKSPACE / NEW JOB</span><strong>CSV to PDF conversion</strong></div><div className="tenant-chip"><span className="tenant-avatar">D</span><span><small>TENANT</small> Demo workspace</span><b>⌄</b></div></header>
+        <div className="upload-shell">
         <header className="upload-header">
           <Link to="/" className="upload-back"><span aria-hidden="true">←</span> DocEngine home</Link>
-          <p className="upload-eyebrow"><span className="upload-brand-mark">T</span> DOCENGINE <span>/</span> REPORT STUDIO</p>
-          <h1>Turn your data into <span>a clear report.</span></h1>
-          <p className="upload-intro">Upload a sales CSV, choose a month, and let DocEngine build a downloadable report in the background.</p>
+          <p className="upload-eyebrow"><span className="upload-brand-mark">T</span> DOCENGINE <span>/</span> CSV TO PDF</p>
+          <h1>Turn any CSV into <span>a clear PDF.</span></h1>
+          <p className="upload-intro">Upload a CSV with a header row and DocEngine will turn its columns and records into a downloadable PDF in the background.</p>
         </header>
 
         <form onSubmit={handleUpload} className="upload-card">
@@ -197,20 +204,19 @@ function UploadPage() {
           {upload && (
             <motion.section className="report-card" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
               <div className="upload-card-heading">
-                <div><span className="upload-step-index">02</span><h2>Build your report</h2></div>
-                <span className="report-format">PDF REPORT</span>
+                <div><span className="upload-step-index">02</span><h2>Convert to PDF</h2></div>
+                <span className="report-format">CSV → PDF</span>
               </div>
-              <p className="report-description">Choose the month to include. DocEngine processes the job asynchronously, so you can watch its progress below.</p>
+              <p className="report-description">All rows and columns are included. DocEngine processes the conversion asynchronously, so you can watch its progress below.</p>
               <div className="report-controls">
-                <div className="report-month-field"><label className="upload-label" htmlFor="report-month">Report month</label><input id="report-month" type="month" value={month} onChange={(event) => setMonth(event.target.value)} className="upload-input" /></div>
                 <button type="button" onClick={handleCreateJob} disabled={isCreatingJob} className="upload-primary-button report-button">
-                  {isCreatingJob ? 'Starting job…' : job ? 'Create another report' : 'Create report'} <span aria-hidden="true">→</span>
+                  {isCreatingJob ? 'Starting conversion…' : job ? 'Convert another CSV' : 'Generate PDF'} <span aria-hidden="true">→</span>
                 </button>
               </div>
 
               {job && (
                 <div className="job-status-card">
-                  <div className="job-status-heading"><div><span className="upload-step-index">03</span><h2>Report progress</h2></div><span className={`job-status-badge status-badge-${job.status.toLowerCase()}`}>{job.status}</span></div>
+                  <div className="job-status-heading"><div><span className="upload-step-index">03</span><h2>Conversion progress</h2></div><span className={`job-status-badge status-badge-${job.status.toLowerCase()}`}>{job.status}</span></div>
                   <div className="status-steps" aria-label={`Job status: ${job.status}`}>
                     {STATUS_STEPS.map((step, index) => {
                       const currentStep = getCurrentStep(upload, job)
@@ -220,7 +226,7 @@ function UploadPage() {
                     })}
                   </div>
                   <p className="job-id-line">JOB ID <code>{job.jobId}</code></p>
-                  {job.status === 'FAILED' && <p className="job-failure">The report could not be generated. Check the CSV data and try again.</p>}
+                  {job.status === 'FAILED' && <p className="job-failure">The PDF could not be generated. Check that the CSV has a header row and consistent columns, then try again.</p>}
                   {job.resultUrl && <a className="report-download" href={job.resultUrl} target="_blank" rel="noreferrer"><span aria-hidden="true">↓</span> Download your PDF report</a>}
                 </div>
               )}
@@ -229,7 +235,8 @@ function UploadPage() {
         </AnimatePresence>
 
         <aside className="upload-tip"><span aria-hidden="true">✦</span><p><strong>Quick demo tip</strong> Use <code>demo-tenant-key</code> locally and choose one of the sample CSV files in the project’s <code>dummy data/</code> folder.</p></aside>
-        <footer className="upload-footer">DOCENGINE <span>·</span> ASYNC REPORT PROCESSING</footer>
+        <footer className="upload-footer">DOCENGINE <span>·</span> ASYNC CSV TO PDF</footer>
+        </div></div>
       </div>
     </main>
   )

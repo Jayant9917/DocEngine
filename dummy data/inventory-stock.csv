@@ -1,0 +1,6 @@
+sku,product_name,category,quantity,unit_price,warehouse
+SKU-1001,Wireless Mouse,Electronics,48,18.99,North Hub
+SKU-1002,Notebook Set,Stationery,120,6.50,Central Hub
+SKU-1003,Desk Lamp,Home Office,17,32.75,South Hub
+SKU-1004,USB-C Cable,Electronics,83,9.25,Central Hub
+SKU-1005,Ergonomic Chair,Furniture,9,189.00,North Hub

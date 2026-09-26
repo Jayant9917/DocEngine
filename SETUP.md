@@ -68,11 +68,11 @@ npm install
 npm run dev
 ```
 
-Open the URL printed by Vite, normally `http://localhost:5173`. The frontend currently calls `http://127.0.0.1:8081` and uses `demo-tenant-key` as the pre-filled local API key. Choose a CSV, upload it, select a report month, create the job, and wait for the status to complete. The download link appears when the API provides the result URL.
+Open the URL printed by Vite, normally `http://localhost:5173`. The frontend calls the local API at `http://127.0.0.1:8081` by default and uses `demo-tenant-key` as the pre-filled local API key. Choose a comma-delimited CSV with a header row, upload it, create the conversion job, and wait for completion. The download link appears when the API provides the result URL.
 
 If uploads fail in the browser, check that the API container is healthy and that the API CORS configuration allows `http://localhost:5173`.
 
-## 5. Try the complete report flow
+## 5. Try the complete CSV-to-PDF flow
 
 You can also exercise the API directly from PowerShell. This example uses the checked-in September fixture.
 
@@ -88,13 +88,12 @@ $upload = curl.exe -sS `
 $upload
 ```
 
-Submit a report job using the returned MinIO input reference:
+Submit a CSV-to-PDF job using the returned MinIO input reference:
 
 ```powershell
 $payload = @{
-  jobType = "GENERATE_MONTHLY_REPORT"
+  jobType = "CONVERT_CSV_TO_PDF"
   input = @{
-    month = "2026-09"
     dataFile = $upload.inputReference
   }
 } | ConvertTo-Json -Compress
@@ -126,13 +125,13 @@ do {
 } while ($status.status -notin @("COMPLETED", "FAILED"))
 ```
 
-When status is `COMPLETED`, download the file from the returned URL before it expires (the local default is 15 minutes):
+When status is `COMPLETED`, download the PDF from the returned URL before it expires (the local default is 15 minutes):
 
 ```powershell
-Invoke-WebRequest -Uri $status.resultUrl -OutFile .\docengine-monthly-report.pdf
+Invoke-WebRequest -Uri $status.resultUrl -OutFile .\docengine-output.pdf
 ```
 
-The worker also creates the CSV report in the results bucket. The job's `resultUrl` points to the PDF report.
+The worker creates a PDF containing each header and its row value. CSVs must have a header row and a consistent number of comma-separated fields. Quoted commas and multiline quoted fields are supported. The job's `resultUrl` points to the generated PDF.
 
 ## 6. Open Prometheus and Grafana
 

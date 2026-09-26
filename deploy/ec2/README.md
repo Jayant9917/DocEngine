@@ -1,6 +1,6 @@
 # DocEngine on EC2 (production Compose)
 
-This Compose file runs the API, one report worker, and private RabbitMQ. PostgreSQL
+This Compose file runs the API, one CSV-to-PDF worker, and private RabbitMQ. PostgreSQL
 is hosted by Supabase and documents use the existing private S3 bucket via the EC2
 instance profile. It does not start local PostgreSQL, MinIO, pgAdmin, Prometheus, or
 Grafana. The local development Compose setup is unchanged.
@@ -54,9 +54,10 @@ Review logs if a service is unhealthy:
 docker compose --env-file deploy/ec2/.env.production -f compose.production.yaml logs --tail=100 docengine-api docengine-worker rabbitmq
 ```
 
-The current worker expects the sales CSV header `orderId,customer,amount,date`.
-After the API is healthy, the end-to-end verification is to upload a matching CSV,
-submit a monthly report job, wait for completion, and download the result. S3 keys
+The worker accepts comma-delimited CSV files with a header row and consistent field
+counts; column names and counts may vary. Quoted commas and multiline quoted fields
+are supported. After the API is healthy, upload a CSV, submit a `CONVERT_CSV_TO_PDF`
+job, wait for completion, and download the result. S3 keys
 created by the current implementation are under `inputs/{tenantId}/{uploadId}/...`
 and `outputs/tenants/{tenantId}/jobs/{jobId}/results/`. These differ from the
 initial proposed example key names but remain within the IAM policy's allowed
