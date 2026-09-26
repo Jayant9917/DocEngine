@@ -1,10 +1,8 @@
 # DocEngine
 
-DocEngine is a small distributed job-processing application. A user uploads a CSV, requests a monthly sales report, and receives a link to the generated PDF/CSV when background processing is complete.
+DocEngine is a distributed document-processing platform. It currently demonstrates CSV upload, asynchronous job processing, and PDF/CSV report generation, while its API, queue, worker, object-storage, and monitoring architecture is designed to support multiple document-processing workloads.
 
 The HTTP API accepts requests quickly and sends report work to RabbitMQ. One or more workers claim queued jobs from PostgreSQL and process them asynchronously. MinIO stores uploaded files and generated reports. Prometheus collects API/worker metrics, which Grafana displays in a provisioned dashboard.
-
-> This repository is a local-development/MVP project, not a production-ready hosted service. The sample API key and credentials are for local testing only.
 
 ## Architecture
 
@@ -16,7 +14,7 @@ Browser → React frontend → Spring API → PostgreSQL
 Prometheus ← scrapes API and Worker       Grafana → Prometheus
 ```
 
-![DocEngine architecture](Project%20monitioring/docengine-architecture%20.png)
+![DocEngine architecture](tests/Project%20monitioring/docengine-architecture%20.png)
 
 ## Main features
 
@@ -122,10 +120,10 @@ dummy/                Sample CSV datasets for manual testing
 - [MVP API reference](docs/MVP-API.md)
 - [MVP architecture](docs/MVP-ARCHITECTURE.md)
 - [MVP test plan](docs/MVP-TEST-PLAN.md)
-- [Load-test report](Project%20monitioring/LOAD-TEST-REPORT.md)
-- [Scaling and optimization notes](Project%20monitioring/SCALING-500-1000-USERS.md)
-- [Grafana dashboard reading guide](Project%20monitioring/GRAFANA-DASHBOARD-READING-GUIDE.md)
-- [Grafana metrics reference](Project%20monitioring/GRAFANA-METRICS-GUIDE.md)
+- [Load-test report](tests/Project%20monitioring/LOAD-TEST-REPORT.md)
+- [Scaling and optimization notes](tests/Project%20monitioring/SCALING-500-1000-USERS.md)
+- [Grafana dashboard reading guide](tests/Project%20monitioring/GRAFANA-DASHBOARD-READING-GUIDE.md)
+- [Grafana metrics reference](tests/Project%20monitioring/GRAFANA-METRICS-GUIDE.md)
 
 ## Security note
 

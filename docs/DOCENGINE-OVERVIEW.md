@@ -6,6 +6,8 @@ DocEngine is a distributed document-processing platform for accepting document-g
 
 The platform is designed for workloads such as invoices, reports, certificates, statements, bulk PDF generation, and customer notifications. The current implementation demonstrates the flow with CSV uploads and monthly PDF/CSV report generation.
 
+The application is structured as a distributed document-processing platform even though the current running configuration contains one API instance and one report-processing worker instance. The API and worker can be replicated when traffic, queue depth, or document volume increases.
+
 ## What the application does
 
 DocEngine separates request handling from document generation:
@@ -179,6 +181,122 @@ The architecture makes these boundaries visible so each layer can be measured an
 | Prometheus | Metrics collection |
 | Grafana | Dashboards and operational visibility |
 
+## Current deployment shape and scaling model
+
+The current working implementation runs with one API instance and one PDF/report worker instance:
+
+```text
+Client -> API instance -> RabbitMQ -> PDF/report worker instance
+```
+
+The services can scale horizontally when required:
+
+```text
+                    +--> API instance 1 --+
+Client --> Load Balancer +--> API instance 2 --+--> RabbitMQ
+                    +--> API instance N --+       |
+                                                   +--> Worker 1
+                                                   +--> Worker 2
+                                                   +--> Worker N
+```
+
+More API instances can be added behind a load balancer to handle incoming requests. More worker instances can be added to process queued documents in parallel. Separate worker pools can later be introduced for invoices, certificates, statements, bulk PDFs, and notifications.
+
+## Running the application
+
+### Requirements
+
+- Docker Desktop with Docker Compose
+- Java 21
+- Maven 3.9 or newer
+- Node.js and npm
+- Git
+
+### Start the backend services
+
+```powershell
+Copy-Item .env.example .env
+docker compose --env-file .env -f docs/docker-compose.mvp.yml up -d --build
+```
+
+The stack includes PostgreSQL, RabbitMQ, MinIO, the DocEngine API, the document worker, Prometheus, Grafana, and pgAdmin.
+
+### Start the frontend
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173` and use the demo tenant key documented in [SETUP.md](../SETUP.md).
+
+### Verify the services
+
+```powershell
+docker compose --env-file .env -f docs/docker-compose.mvp.yml ps
+curl.exe http://127.0.0.1:8081/actuator/health
+```
+
+The API health endpoint should return a healthy status. The complete upload-to-report flow is documented in [SETUP.md](../SETUP.md).
+
+## Service addresses
+
+| Service | Address |
+|---|---|
+| Frontend | `http://localhost:5173` |
+| DocEngine API | `http://127.0.0.1:8081` |
+| API health | `http://127.0.0.1:8081/actuator/health` |
+| API metrics | `http://127.0.0.1:8081/actuator/prometheus` |
+| Worker metrics | `http://127.0.0.1:8082/actuator/prometheus` |
+| Prometheus | `http://127.0.0.1:9090` |
+| Grafana | `http://127.0.0.1:3000` |
+| RabbitMQ management | `http://127.0.0.1:15672` |
+| MinIO console | `http://127.0.0.1:9001` |
+| pgAdmin | `http://127.0.0.1:5050` |
+
+## Project layout
+
+```text
+services/
+  docengine-api/       Spring Boot HTTP API
+  docengine-worker/    RabbitMQ document worker
+  docengine-common/    Shared domain and messaging types
+frontend/              React + Vite user interface
+database/migrations/   Flyway SQL migrations
+docs/                  Architecture, API, setup, and platform documentation
+infra/                 Prometheus and Grafana provisioning
+tests/                 Integration fixtures and load tests
+dummy/                 Sample CSV datasets
+```
+
+## Build and tests
+
+```powershell
+mvn test
+```
+
+```powershell
+cd frontend
+npm run build
+npm run lint
+```
+
+The optional k6 flow test creates real uploads and report jobs to study throughput, queue behavior, worker scaling, and bottlenecks. See [tests/load/README.md](../tests/load/README.md).
+
+## Related documentation
+
+- [Repository README](../README.md)
+- [Setup and run instructions](../SETUP.md)
+- [MVP scope](MVP-SCOPE.md)
+- [MVP API reference](MVP-API.md)
+- [MVP architecture](MVP-ARCHITECTURE.md)
+- [MVP test plan](MVP-TEST-PLAN.md)
+- [Load-test report](../tests/Project%20monitioring/LOAD-TEST-REPORT.md)
+- [Scaling and optimization notes](../tests/Project%20monitioring/SCALING-500-1000-USERS.md)
+- [Grafana dashboard reading guide](../tests/Project%20monitioring/GRAFANA-DASHBOARD-READING-GUIDE.md)
+- [Grafana metrics reference](../tests/Project%20monitioring/GRAFANA-METRICS-GUIDE.md)
+
 ## Current demonstration flow
 
 The working demonstration currently focuses on:
@@ -188,4 +306,3 @@ CSV upload -> asynchronous monthly report job -> PDF/CSV result
 ```
 
 This demonstrates the same core patterns required for a broader document platform: authenticated APIs, durable queues, asynchronous workers, idempotency, safe job claiming, object storage, result links, retries, observability, and horizontal worker scaling.
-
