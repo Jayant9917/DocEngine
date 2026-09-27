@@ -72,7 +72,42 @@ services:
       DOCENGINE_STORAGE_S3_REGION: ${DOCENGINE_S3_REGION:-ap-south-1}
       DOCENGINE_STORAGE_S3_INPUT_PREFIX: ${DOCENGINE_S3_INPUT_PREFIX:-inputs}
       DOCENGINE_STORAGE_S3_OUTPUT_PREFIX: ${DOCENGINE_S3_OUTPUT_PREFIX:-outputs}
-    # No public worker/Actuator port. Monitoring can join the Compose network later.
+    # No host-published worker/Actuator port; Prometheus scrapes it on the Compose network.
+
+  prometheus:
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    depends_on:
+      - docengine-api
+      - docengine-worker
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+    ports:
+      # Reach only through SSH forwarding; never open this in the EC2 security group.
+      - "127.0.0.1:9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set a strong unique Grafana admin password}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      # Reach only through an SSH/SSM local port-forward. Do not open this in the EC2 security group.
+      - "127.0.0.1:3000:3000"
 
 volumes:
   rabbitmq_data:
+  prometheus_data:
+  grafana_data:
