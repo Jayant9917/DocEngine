@@ -1,10 +1,16 @@
 # DocEngine
 
+![DocEngine monitoring dashboard](tests/Project%20monitioring/dashboard%20image.png)
+
 ## Distributed Document Processing Platform
 
 DocEngine accepts header-based CSV uploads, queues conversion jobs, renders each record into a PDF, and stores the PDF in object storage. It supports varying column names and counts rather than requiring a sales-specific schema.
 
 The architecture can be extended for other document types, but invoice, certificate, statement, bulk-PDF, and notification workers are future extensions—not current features.
+
+## Architecture
+
+![DocEngine system architecture](tests/Project%20monitioring/docengine-architecture%20.png)
 
 The application is structured as a distributed document-processing platform even though the current running configuration contains one API instance and one CSV-to-PDF worker instance. The API and worker can be replicated when traffic, queue depth, or document volume increases.
 
@@ -170,49 +176,6 @@ architecture can scale, but additional replicas and high-availability infrastruc
 are not currently deployed. Generic CSV-to-PDF conversion is implemented; other
 document types and specialized workers described above are future extensions.
 
-### Private production monitoring
-
-Prometheus and Grafana are not open to the public internet. Their EC2 ports are bound
-to loopback and should remain closed in the EC2 security group. From an authorized
-computer with the EC2 SSH key, create a local tunnel:
-
-```bash
-ssh -i "path/to/docengine-prod-key.pem" -N \
-  -L 3000:127.0.0.1:3000 \
-  -L 9090:127.0.0.1:9090 \
-  ubuntu@EC2_PUBLIC_IP
-```
-
-Keep the SSH session open, then use Grafana at `http://127.0.0.1:3000` and Prometheus
-targets at `http://127.0.0.1:9090/targets`. Sign in to Grafana with the private
-credentials configured in EC2's `deploy/ec2/.env.production`. Do not create public
-Grafana dashboard links for production metrics.
-
-The local development stack differs: it uses PostgreSQL and MinIO containers from
-`docs/docker-compose.mvp.yml`; production uses Supabase PostgreSQL and S3. Both local
-and production Compose stacks include Prometheus and Grafana, but production access
-is private-only.
-
-## Current deployment shape and scaling model
-
-The current deployment runs with one API instance and one CSV-to-PDF worker instance:
-
-```text
-Client -> API instance -> RabbitMQ -> CSV-to-PDF worker instance
-```
-
-The services can scale horizontally when required:
-
-```text
-                    +--> API instance 1 --+
-Client --> Load Balancer +--> API instance 2 --+--> RabbitMQ
-                    +--> API instance N --+       |
-                                                   +--> Worker 1
-                                                   +--> Worker 2
-                                                   +--> Worker N
-```
-
-More API instances can be added behind a load balancer to handle incoming requests. More worker instances can be added to process queued documents in parallel. Separate worker pools can later be introduced for invoices, certificates, statements, bulk PDFs, and notifications.
 
 ## Running the application
 
@@ -224,33 +187,6 @@ More API instances can be added behind a load balancer to handle incoming reques
 - Node.js and npm
 - Git
 
-### Start the backend services
-
-```powershell
-Copy-Item .env.example .env
-docker compose --env-file .env -f docs/docker-compose.mvp.yml up -d --build
-```
-
-The stack includes PostgreSQL, RabbitMQ, MinIO, the DocEngine API, the document worker, Prometheus, Grafana, and pgAdmin.
-
-### Start the frontend
-
-```powershell
-cd frontend
-npm install
-npm run dev
-```
-
-Open `http://localhost:5173` and use the demo tenant key documented in [SETUP.md](SETUP.md).
-
-### Verify the services
-
-```powershell
-docker compose --env-file .env -f docs/docker-compose.mvp.yml ps
-curl.exe http://127.0.0.1:8081/actuator/health
-```
-
-The API health endpoint should return a healthy status. The complete upload-to-PDF flow is documented in [SETUP.md](SETUP.md).
 
 ## Service addresses
 
@@ -295,6 +231,42 @@ npm run lint
 ```
 
 The optional k6 flow test creates real uploads and conversion jobs to study throughput, queue behavior, worker scaling, and bottlenecks. See [tests/load/README.md](tests/load/README.md).
+
+## Load test results
+
+The real-flow k6 test was run at 100, 200, and 500 virtual users (VUs). It uploads
+CSV files and submits asynchronous jobs. These runs used the local Docker stack with
+MinIO; they are not measurements of the EC2 production deployment. The script checks
+upload/job acceptance and does not wait for every queued job to finish PDF generation.
+
+| Virtual users | Run result |
+|---:|---|
+| 100 | 3,000 successful CSV uploads and 3,000 accepted job submissions in 30 seconds; all checks passed, with 0% HTTP request failures. |
+| 200 | Run captured in the dashboard screenshot below; see the report for the recorded aggregate results available for the 100- and 500-VU runs. |
+| 500 | 14,027 successful uploads; 297 upload attempts failed at the connection level. Overall checks passed 98.60%, and HTTP request failures were 1.04%. |
+
+At 500 VUs the API stayed running, but connection refusals appeared and latency
+increased. This run demonstrates a capacity limit under that local test environment,
+not a production capacity guarantee. Review the [full load-test report](tests/Project%20monitioring/LOAD-TEST-REPORT.md)
+and [500-user follow-up notes](tests/Project%20monitioring/500%20users.md) before
+interpreting or repeating the test.
+
+### Grafana snapshots
+
+These screenshots show the recorded dashboard during the 100-, 200-, and 500-VU
+runs. The full detailed run results are in the linked report above.
+
+**100 virtual users — 3,000 uploads**
+
+![Grafana dashboard during the 100-user load test](tests/Project%20monitioring/100%20user.png)
+
+**200 virtual users**
+
+![Grafana dashboard during the 200-user load test](tests/Project%20monitioring/200%20user.png)
+
+**500 virtual users — 14,027 successful uploads, 297 connection failures**
+
+![Grafana dashboard during the 500-user load test](tests/Project%20monitioring/500%20user.png)
 
 ## Related documentation
 
