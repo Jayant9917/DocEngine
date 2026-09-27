@@ -151,18 +151,47 @@ The architecture makes these boundaries visible so each layer can be measured an
 | Prometheus | Metrics collection |
 | Grafana | Dashboards and operational visibility |
 
-The deployed application uses these services:
+## Deployed application
 
-| Service | Use in this deployment |
+The current deployment has been smoke-tested end to end: the Vercel frontend sends
+an upload to the API, the worker processes the queued job, the generated PDF is stored
+in S3, and Grafana receives API and worker metrics.
+
+| Service | Role in the deployment |
 |---|---|
-| Vercel | Hosts the React/Vite frontend |
-| AWS EC2 | Runs the backend containers with Docker Compose |
-| Amazon S3 | Stores uploaded CSVs and generated reports; the EC2 instance role grants access |
-| Supabase | Hosts PostgreSQL |
-| RabbitMQ | Queues report jobs inside the EC2 Compose network |
-| Cloudflare Quick Tunnel | Temporary HTTPS ingress to the EC2 API; it must be running, and its URL may change |
+| [Vercel frontend](https://frontend-three-lilac-58.vercel.app) | Hosts the React/Vite web app |
+| [AWS EC2 API](https://api.jayrana.in/actuator/health) | Runs the Spring Boot API behind the public HTTPS endpoint |
+| AWS EC2 + Docker Compose | Runs one API instance, one CSV-to-PDF worker, RabbitMQ, Prometheus, and Grafana |
+| Supabase | Hosts PostgreSQL job and tenant data |
+| Amazon S3 | Stores uploaded CSV files and generated PDFs; EC2 accesses the bucket through its instance role |
 
-The local development stack differs: it uses PostgreSQL and MinIO containers from `docs/docker-compose.mvp.yml`. Prometheus and Grafana are included in the local stack, but not in the production Compose stack described in `deploy/ec2/README.md`.
+The deployed app currently runs one API instance and one worker instance. The
+architecture can scale, but additional replicas and high-availability infrastructure
+are not currently deployed. Generic CSV-to-PDF conversion is implemented; other
+document types and specialized workers described above are future extensions.
+
+### Private production monitoring
+
+Prometheus and Grafana are not open to the public internet. Their EC2 ports are bound
+to loopback and should remain closed in the EC2 security group. From an authorized
+computer with the EC2 SSH key, create a local tunnel:
+
+```bash
+ssh -i "path/to/docengine-prod-key.pem" -N \
+  -L 3000:127.0.0.1:3000 \
+  -L 9090:127.0.0.1:9090 \
+  ubuntu@EC2_PUBLIC_IP
+```
+
+Keep the SSH session open, then use Grafana at `http://127.0.0.1:3000` and Prometheus
+targets at `http://127.0.0.1:9090/targets`. Sign in to Grafana with the private
+credentials configured in EC2's `deploy/ec2/.env.production`. Do not create public
+Grafana dashboard links for production metrics.
+
+The local development stack differs: it uses PostgreSQL and MinIO containers from
+`docs/docker-compose.mvp.yml`; production uses Supabase PostgreSQL and S3. Both local
+and production Compose stacks include Prometheus and Grafana, but production access
+is private-only.
 
 ## Current deployment shape and scaling model
 
@@ -274,6 +303,8 @@ The optional k6 flow test creates real uploads and conversion jobs to study thro
 - [Platform overview](docs/DOCENGINE-OVERVIEW.md)
 - [MIT License](LICENSE)
 - [Code of Conduct](CODE_OF_CONDUCT.md)
+
+> **Production credential reminder:** the demo flow uses a sample tenant API key. Replace it with a unique, securely managed production credential before allowing general public use. Never publish real API keys, passwords, or `.env` files.
 
 ## Current demonstration flow
 
